@@ -46,31 +46,27 @@ export function useFidelidade(responsavelId: string) {
   const [responsavel, setResponsavel] = useState<Responsavel | null>(null);
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
+  const [solicitandoResgate, setSolicitandoResgate] = useState(false);
+  const [resgateEnviado, setResgateEnviado] = useState(false);
 
   useEffect(() => {
     if (!responsavelId) return;
-
     const q = query(
       collection(db, "indicacoes"),
       where("responsavelId", "==", responsavelId)
     );
-
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
         criadoEm: doc.data().criadoEm?.toDate?.()?.toISOString() ?? new Date().toISOString(),
       })) as Indicacao[];
-
       setIndicacoes(data);
-
       if (data.length > 0 && !responsavel) {
         setResponsavel({ id: responsavelId, nome: data[0].nomeResponsavel });
       }
-
       setLoading(false);
     });
-
     return () => unsub();
   }, [responsavelId]);
 
@@ -95,6 +91,25 @@ export function useFidelidade(responsavelId: string) {
     }
   };
 
+  const solicitarResgate = async (tipo: "material_didatico" | "saldo_parcial", valor: number) => {
+    if (!responsavel) return;
+    setSolicitandoResgate(true);
+    try {
+      await addDoc(collection(db, "resgates"), {
+        responsavelId,
+        nomeResponsavel: responsavel.nome,
+        tipo,
+        valor,
+        status: "pendente",
+        criadoEm: serverTimestamp(),
+      });
+      setResgateEnviado(true);
+      setTimeout(() => setResgateEnviado(false), 5000);
+    } finally {
+      setSolicitandoResgate(false);
+    }
+  };
+
   const matriculados = indicacoes.filter((i) => i.status === "Matriculado").length;
   const nivel = calcularNivel(matriculados);
   const matriculadosAmbassador = matriculados > 4 ? matriculados - 4 : 0;
@@ -110,5 +125,8 @@ export function useFidelidade(responsavelId: string) {
     saldoAcumulado,
     adicionarIndicacao,
     setResponsavel,
+    solicitarResgate,
+    solicitandoResgate,
+    resgateEnviado,
   };
 }
