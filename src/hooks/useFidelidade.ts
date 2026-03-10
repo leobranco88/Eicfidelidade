@@ -50,11 +50,10 @@ export function useFidelidade(responsavelId: string) {
   useEffect(() => {
     if (!responsavelId) return;
 
-    const q = query(
-      collection(db, "indicacoes"),
-      where("responsavelId", "==", responsavelId),
-      orderBy("criadoEm", "desc")
-    );
+   const q = query(
+  collection(db, "indicacoes"),
+  where("responsavelId", "==", responsavelId)
+);
 
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map((doc) => ({
