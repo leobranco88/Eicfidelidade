@@ -1,38 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
-  Star, Users, CheckCircle2, Gift, Trophy, Award,
-  UserPlus, Download, HelpCircle, Crown, X, Loader2
+  Users, CheckCircle2, Gift, Trophy, Award,
+  UserPlus, Download, HelpCircle, Crown, Star, X, Loader2
 } from "lucide-react";
 import { useFidelidade, type Nivel } from "../../hooks/useFidelidade";
 
-function Logo({ size = "small", variant = "light" }: { size?: "small" | "medium"; variant?: "light" | "dark" }) {
-  const textColor = variant === "light" ? "#FFFFFF" : "#070738";
-  const fontSize = size === "small" ? "11px" : "13px";
-  return (
-    <div className="flex items-center gap-2">
-      <div
-        className="rounded-full flex items-center justify-center font-bold text-white"
-        style={{
-          width: size === "small" ? 28 : 36,
-          height: size === "small" ? 28 : 36,
-          background: "linear-gradient(135deg, #FF5C00, #6B3FA0)",
-          fontSize: size === "small" ? 13 : 16,
-        }}
-      >
-        C
-      </div>
-      <div>
-        <div style={{ color: textColor, fontWeight: 700, fontSize, letterSpacing: "0.05em", fontFamily: "DM Sans, sans-serif" }}>
-          ESCOLA DE IDIOMAS
-        </div>
-        <div style={{ color: textColor, fontWeight: 400, fontSize: "9px", opacity: 0.8, letterSpacing: "0.08em" }}>
-          E CULTURA
-        </div>
-      </div>
-    </div>
-  );
-}
+const EIC_LOGO = "https://raw.githubusercontent.com/leobranco88/Studentprogressreportdesign/main/src/assets/eic-logo-transparente.png";
 
 function getBadgeStyle(nivel: Nivel) {
   switch (nivel) {
@@ -119,10 +93,7 @@ function ModalIndicacao({ onClose, onSubmit, enviando }: ModalIndicacaoProps) {
     if (!nome.trim() || !whatsapp.trim()) return;
     await onSubmit({ nomeIndicado: nome.trim(), whatsappIndicado: whatsapp.trim() });
     setSucesso(true);
-    setTimeout(() => {
-      setSucesso(false);
-      onClose();
-    }, 2000);
+    setTimeout(() => { setSucesso(false); onClose(); }, 2000);
   };
 
   return (
@@ -136,7 +107,6 @@ function ModalIndicacao({ onClose, onSubmit, enviando }: ModalIndicacaoProps) {
             <X size={20} className="text-gray-500" />
           </button>
         </div>
-
         {sucesso ? (
           <div className="text-center py-8">
             <CheckCircle2 size={48} className="mx-auto mb-3" style={{ color: "#22c55e" }} />
@@ -145,53 +115,25 @@ function ModalIndicacao({ onClose, onSubmit, enviando }: ModalIndicacaoProps) {
           </div>
         ) : (
           <>
-            <p className="text-sm text-gray-500 mb-6">
-              Preencha os dados do seu amigo. A indicação será confirmada pela equipe EIC.
-            </p>
-
+            <p className="text-sm text-gray-500 mb-6">Preencha os dados do seu amigo. A indicação será confirmada pela equipe EIC.</p>
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: "#070738" }}>
-                  Nome completo
-                </label>
-                <input
-                  type="text"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Nome do seu amigo"
+                <label className="block text-sm font-medium mb-1" style={{ color: "#070738" }}>Nome completo</label>
+                <input type="text" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do seu amigo"
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-purple-400 text-sm"
-                  style={{ fontFamily: "DM Sans, sans-serif" }}
-                />
+                  style={{ fontFamily: "DM Sans, sans-serif" }} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: "#070738" }}>
-                  WhatsApp
-                </label>
-                <input
-                  type="tel"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  placeholder="(11) 99999-9999"
+                <label className="block text-sm font-medium mb-1" style={{ color: "#070738" }}>WhatsApp</label>
+                <input type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="(11) 99999-9999"
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-purple-400 text-sm"
-                  style={{ fontFamily: "DM Sans, sans-serif" }}
-                />
+                  style={{ fontFamily: "DM Sans, sans-serif" }} />
               </div>
             </div>
-
-            <button
-              onClick={handleSubmit}
-              disabled={enviando || !nome.trim() || !whatsapp.trim()}
+            <button onClick={handleSubmit} disabled={enviando || !nome.trim() || !whatsapp.trim()}
               className="w-full py-4 rounded-2xl text-white font-semibold flex items-center justify-center gap-2 transition-opacity disabled:opacity-50"
-              style={{ backgroundColor: "#FF5C00" }}
-            >
-              {enviando ? (
-                <Loader2 size={20} className="animate-spin" />
-              ) : (
-                <>
-                  <UserPlus size={20} />
-                  Enviar Indicação
-                </>
-              )}
+              style={{ backgroundColor: "#FF5C00" }}>
+              {enviando ? <Loader2 size={20} className="animate-spin" /> : <><UserPlus size={20} />Enviar Indicação</>}
             </button>
           </>
         )}
@@ -202,18 +144,41 @@ function ModalIndicacao({ onClose, onSubmit, enviando }: ModalIndicacaoProps) {
 
 export function FidelityPage() {
   const { responsavelId } = useParams<{ responsavelId: string }>();
-  const {
-    indicacoes, responsavel, loading, enviando,
-    nivel, matriculados, saldoAcumulado,
-    adicionarIndicacao, setResponsavel,
-  } = useFidelidade(responsavelId ?? "");
-
+  const { indicacoes, responsavel, loading, enviando, nivel, matriculados, saldoAcumulado, adicionarIndicacao } = useFidelidade(responsavelId ?? "");
+  const [timedOut, setTimedOut] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
 
-  // Se ainda carregando e não tem responsável, tenta buscar pelo ID
-  // Caso o pai nunca tenha tido indicações, precisamos de um fallback
-  const nomeResponsavel = responsavel?.nome ?? "Olá!";
+  useEffect(() => {
+    if (!loading) return;
+    const timer = setTimeout(() => setTimedOut(true), 6000);
+    return () => clearTimeout(timer);
+  }, [loading]);
 
+  if (loading && timedOut) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#F8F6FF" }}>
+        <div className="text-center px-6">
+          <img src={EIC_LOGO} alt="EIC" style={{ width: 120, margin: "0 auto 24px" }} />
+          <div className="text-5xl mb-4">🔒</div>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: "#070738", fontFamily: "Playfair Display, serif" }}>Link inválido</h1>
+          <p className="text-gray-500 text-sm">Este link não existe ou foi desativado.<br />Entre em contato com a EIC para obter seu link pessoal.</p>
+          <p className="mt-6 text-sm font-medium" style={{ color: "#6B3FA0" }}>eicschool.com.br</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6" style={{ backgroundColor: "#F8F6FF" }}>
+        <img src={EIC_LOGO} alt="EIC" style={{ width: 120 }} />
+        <Loader2 size={32} className="animate-spin" style={{ color: "#6B3FA0" }} />
+        <p className="text-sm text-gray-500" style={{ fontFamily: "DM Sans, sans-serif" }}>Carregando seu programa de fidelidade...</p>
+      </div>
+    );
+  }
+
+  const nomeResponsavel = responsavel?.nome ?? "";
   const config = getNivelConfig(nivel, matriculados);
   const badgeStyle = getBadgeStyle(nivel);
   const LevelIcon = config.icon;
@@ -222,30 +187,17 @@ export function FidelityPage() {
   const canRedeem = saldoAcumulado >= 350;
   const remainingBalance = 350 - saldoAcumulado;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#F8F6FF" }}>
-        <Loader2 size={32} className="animate-spin" style={{ color: "#6B3FA0" }} />
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-[430px] mx-auto min-h-screen" style={{ fontFamily: "DM Sans, sans-serif" }}>
       {/* HEADER */}
-      <header
-        className="px-6 py-6 text-white"
-        style={{ background: "linear-gradient(135deg, #FF5C00 0%, #6B3FA0 50%, #070738 100%)" }}
-      >
+      <header className="px-6 py-6 text-white" style={{ background: "linear-gradient(135deg, #FF5C00 0%, #6B3FA0 50%, #070738 100%)" }}>
         <div className="flex items-center justify-between mb-4">
-          <Logo size="small" variant="light" />
+          <img src={EIC_LOGO} alt="EIC" style={{ width: 80, filter: "brightness(0) invert(1)" }} />
           <div className="text-xs opacity-70">1º Sem 2026</div>
         </div>
         <div>
           <div className="text-xs opacity-80 mb-1">Olá,</div>
-          <h2 className="text-2xl" style={{ fontFamily: "Playfair Display, serif", fontWeight: 700 }}>
-            {nomeResponsavel}
-          </h2>
+          <h2 className="text-2xl" style={{ fontFamily: "Playfair Display, serif", fontWeight: 700 }}>{nomeResponsavel}</h2>
         </div>
       </header>
 
@@ -254,76 +206,46 @@ export function FidelityPage() {
         <div className="bg-white rounded-2xl p-6 -mt-4 mb-4 text-center relative" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
           <div className="relative inline-block mb-4">
             {nivel === "ambassador" && (
-              <div
-                className="absolute -inset-2 rounded-full"
-                style={{
-                  background: "linear-gradient(90deg, #FF5C00, #F5A800, #6B3FA0, #FF5C00)",
-                  backgroundSize: "300% 100%",
-                  animation: "shimmer 3s linear infinite",
-                  opacity: 0.6,
-                }}
-              />
+              <div className="absolute -inset-2 rounded-full" style={{ background: "linear-gradient(90deg, #FF5C00, #F5A800, #6B3FA0, #FF5C00)", backgroundSize: "300% 100%", animation: "shimmer 3s linear infinite", opacity: 0.6 }} />
             )}
-            <div
-              className="relative rounded-full flex items-center justify-center"
-              style={{
-                background: badgeStyle.gradient,
-                boxShadow: badgeStyle.shadow,
-                width: nivel === "ambassador" ? 140 : 120,
-                height: nivel === "ambassador" ? 140 : 120,
-              }}
-            >
+            <div className="relative rounded-full flex items-center justify-center" style={{ background: badgeStyle.gradient, boxShadow: badgeStyle.shadow, width: nivel === "ambassador" ? 140 : 120, height: nivel === "ambassador" ? 140 : 120 }}>
               <div className="absolute inset-0 rounded-full" style={{ background: "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 50%)" }} />
               <LevelIcon size={nivel === "ambassador" ? 56 : 48} className="relative z-10" style={{ color: "#FFFFFF" }} />
             </div>
           </div>
-
           <div className="inline-block px-4 py-1 rounded-full text-xs font-semibold mb-3" style={{ backgroundColor: badgeStyle.pillBg, color: badgeStyle.pillText }}>
             {config.name.toUpperCase()}
           </div>
-
-          <h3 className="text-2xl mb-2" style={{ fontFamily: "Playfair Display, serif", fontWeight: 700, color: "#070738" }}>
-            {config.phrase}
-          </h3>
+          <h3 className="text-2xl mb-2" style={{ fontFamily: "Playfair Display, serif", fontWeight: 700, color: "#070738" }}>{config.phrase}</h3>
           <p className="text-sm text-gray-600 mb-1">{config.subPhrase}</p>
-          {"extraPhrase" in config && config.extraPhrase && (
-            <p className="text-xs text-gray-500">{config.extraPhrase}</p>
-          )}
+          {"extraPhrase" in config && config.extraPhrase && <p className="text-xs text-gray-500">{config.extraPhrase}</p>}
         </div>
 
         {/* CELEBRAÇÃO OURO */}
         {nivel === "ouro" && (
           <div className="rounded-2xl p-6 text-white text-center mb-4" style={{ background: "linear-gradient(135deg, #FFE566 0%, #F5A800 50%, #D4870A 100%)", boxShadow: "0 4px 20px rgba(245,168,0,0.3)" }}>
             <Trophy size={32} className="mx-auto mb-3" />
-            <h3 className="text-xl mb-2" style={{ fontFamily: "Playfair Display, serif", fontWeight: 600 }}>
-              Seu próximo mês é por nossa conta!
-            </h3>
+            <h3 className="text-xl mb-2" style={{ fontFamily: "Playfair Display, serif", fontWeight: 600 }}>Seu próximo mês é por nossa conta!</h3>
             <p className="text-sm opacity-90">Você ganhou 1 mensalidade grátis no valor de R$ 320</p>
           </div>
         )}
 
         {/* MÉTRICAS */}
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="bg-white rounded-2xl p-4 text-center" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-            <Users size={24} className="mx-auto mb-2" style={{ color: "#FF5C00" }} />
-            <div className="text-2xl mb-1" style={{ color: "#070738", fontWeight: 600 }}>{indicacoes.length}</div>
-            <div className="text-xs text-gray-600">Indicações</div>
-          </div>
-          <div className="bg-white rounded-2xl p-4 text-center" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-            <CheckCircle2 size={24} className="mx-auto mb-2" style={{ color: "#22c55e" }} />
-            <div className="text-2xl mb-1" style={{ color: "#070738", fontWeight: 600 }}>{matriculados}</div>
-            <div className="text-xs text-gray-600">Matriculados</div>
-          </div>
-          <div className="bg-white rounded-2xl p-4 text-center" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-            <Gift size={24} className="mx-auto mb-2" style={{ color: "#F5A800" }} />
-            <div className="text-xs mb-1 leading-tight" style={{ color: "#070738", fontWeight: 600 }}>
-              {nivel === "ambassador" ? `R$ ${saldoAcumulado}` : nivel === "ouro" ? "1 mês grátis" : "Badge"}
+          {[
+            { icon: <Users size={24} style={{ color: "#FF5C00" }} />, value: indicacoes.length, label: "Indicações" },
+            { icon: <CheckCircle2 size={24} style={{ color: "#22c55e" }} />, value: matriculados, label: "Matriculados" },
+            { icon: <Gift size={24} style={{ color: "#F5A800" }} />, value: nivel === "ambassador" ? `R$ ${saldoAcumulado}` : nivel === "ouro" ? "1 mês grátis" : "Badge", label: "Benefício" },
+          ].map((item, i) => (
+            <div key={i} className="bg-white rounded-2xl p-4 text-center" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
+              <div className="flex justify-center mb-2">{item.icon}</div>
+              <div className="text-2xl mb-1 leading-tight" style={{ color: "#070738", fontWeight: 600, fontSize: typeof item.value === "string" ? "13px" : undefined }}>{item.value}</div>
+              <div className="text-xs text-gray-600">{item.label}</div>
             </div>
-            <div className="text-xs text-gray-600">Benefício</div>
-          </div>
+          ))}
         </div>
 
-        {/* BARRA DE PROGRESSO (não Ambassador) */}
+        {/* BARRA DE PROGRESSO */}
         {!config.showBalance && (
           <div className="bg-white rounded-2xl p-6 mb-4" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
             <div className="flex items-center gap-2 mb-4">
@@ -350,9 +272,7 @@ export function FidelityPage() {
         {config.showBalance && (
           <div className="bg-white rounded-2xl p-6 mb-4" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)", border: "2px solid #6B3FA0" }}>
             <h4 className="text-sm text-gray-600 mb-2">Seu saldo</h4>
-            <div className="text-4xl mb-3" style={{ fontFamily: "Playfair Display, serif", fontWeight: 700, color: "#FF5C00" }}>
-              R$ {saldoAcumulado}
-            </div>
+            <div className="text-4xl mb-3" style={{ fontFamily: "Playfair Display, serif", fontWeight: 700, color: "#FF5C00" }}>R$ {saldoAcumulado}</div>
             <p className="text-xs text-gray-600 mb-4">A cada nova matrícula confirmada, você acumula R$50</p>
             <div className="mb-3">
               <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -360,51 +280,36 @@ export function FidelityPage() {
               </div>
             </div>
             {!canRedeem ? (
-              <p className="text-sm text-gray-600">
-                Faltam <span style={{ color: "#FF5C00", fontWeight: 600 }}>R$ {remainingBalance}</span> para resgatar o material didático
-              </p>
+              <p className="text-sm text-gray-600">Faltam <span style={{ color: "#FF5C00", fontWeight: 600 }}>R$ {remainingBalance}</span> para resgatar o material didático</p>
             ) : (
-              <button className="w-full py-3 rounded-xl text-white font-semibold mt-2" style={{ backgroundColor: "#FF5C00" }}>
-                Resgatar material didático
-              </button>
+              <button className="w-full py-3 rounded-xl text-white font-semibold mt-2" style={{ backgroundColor: "#FF5C00" }}>Resgatar material didático</button>
             )}
           </div>
         )}
 
-        {/* LISTA DE INDICAÇÕES */}
+        {/* LISTA */}
         <div className="mb-4">
-          <h3 className="text-2xl mb-4" style={{ fontFamily: "Playfair Display, serif", fontWeight: 600, color: "#070738" }}>
-            Suas Indicações
-          </h3>
+          <h3 className="text-2xl mb-4" style={{ fontFamily: "Playfair Display, serif", fontWeight: 600, color: "#070738" }}>Suas Indicações</h3>
           <div className="space-y-3">
             {indicacoes.length === 0 ? (
               <div className="bg-white rounded-2xl p-6 text-center" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
                 <p className="text-gray-400 text-sm">Você ainda não fez nenhuma indicação.</p>
               </div>
-            ) : (
-              indicacoes.map((ind) => (
-                <div key={ind.id} className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-medium" style={{ color: "#070738" }}>{ind.nomeIndicado}</h4>
-                    <span className={`text-xs px-3 py-1 rounded-full ${getStatusColor(ind.status)}`}>{ind.status}</span>
-                  </div>
-                  <p className="text-sm text-gray-500">
-                    Indicado em {new Date(ind.criadoEm).toLocaleDateString("pt-BR")}
-                  </p>
+            ) : indicacoes.map((ind) => (
+              <div key={ind.id} className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium" style={{ color: "#070738" }}>{ind.nomeIndicado}</h4>
+                  <span className={`text-xs px-3 py-1 rounded-full ${getStatusColor(ind.status)}`}>{ind.status}</span>
                 </div>
-              ))
-            )}
+                <p className="text-sm text-gray-500">Indicado em {new Date(ind.criadoEm).toLocaleDateString("pt-BR")}</p>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* BOTÃO INDICAR */}
-        <button
-          onClick={() => setModalAberto(true)}
-          className="w-full py-4 rounded-2xl text-white font-semibold flex items-center justify-center gap-2 mb-4 transition-transform active:scale-98"
-          style={{ backgroundColor: "#FF5C00" }}
-        >
-          <UserPlus size={20} />
-          Indicar um Amigo
+        <button onClick={() => setModalAberto(true)} className="w-full py-4 rounded-2xl text-white font-semibold flex items-center justify-center gap-2 mb-4" style={{ backgroundColor: "#FF5C00" }}>
+          <UserPlus size={20} />Indicar um Amigo
         </button>
 
         {/* CERTIFICADO */}
@@ -413,43 +318,28 @@ export function FidelityPage() {
             <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: "rgba(245,168,0,0.3)" }}>
               <Award size={32} style={{ color: "#F5A800" }} />
             </div>
-            <h3 className="text-xl mb-2" style={{ fontFamily: "Playfair Display, serif", fontWeight: 600 }}>
-              Seu Certificado Ambassador está pronto!
-            </h3>
+            <h3 className="text-xl mb-2" style={{ fontFamily: "Playfair Display, serif", fontWeight: 600 }}>Seu Certificado Ambassador está pronto!</h3>
             <p className="text-sm mb-4 opacity-90">Baixe, imprima e compartilhe.</p>
             {nivel === "ouro" ? (
               <div className="space-y-2">
-                <button className="w-full bg-white text-gray-800 px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
-                  <Download size={18} /> Ver Certificado
-                </button>
-                <button className="w-full bg-transparent text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ border: "2px solid white" }}>
-                  <HelpCircle size={18} /> Como usar meu mês grátis?
-                </button>
+                <button className="w-full bg-white text-gray-800 px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2"><Download size={18} /> Ver Certificado</button>
+                <button className="w-full bg-transparent text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ border: "2px solid white" }}><HelpCircle size={18} /> Como usar meu mês grátis?</button>
               </div>
             ) : (
-              <button className="bg-white text-gray-800 px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 mx-auto">
-                <Download size={18} /> Ver Certificado
-              </button>
+              <button className="bg-white text-gray-800 px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 mx-auto"><Download size={18} /> Ver Certificado</button>
             )}
           </div>
         )}
 
         {/* RODAPÉ */}
         <footer className="text-center pt-8 pb-4">
-          <Logo size="small" variant="dark" />
-          <p className="text-sm mb-2 mt-2" style={{ color: "#6B3FA0", fontWeight: 500 }}>eicschool.com.br</p>
+          <img src={EIC_LOGO} alt="EIC" style={{ width: 90, margin: "0 auto 8px" }} />
+          <p className="text-sm mb-2" style={{ color: "#6B3FA0", fontWeight: 500 }}>eicschool.com.br</p>
           <p className="text-xs text-gray-500 px-8">Este link é exclusivo para você.</p>
         </footer>
       </div>
 
-      {/* MODAL INDICAÇÃO */}
-      {modalAberto && (
-        <ModalIndicacao
-          onClose={() => setModalAberto(false)}
-          onSubmit={adicionarIndicacao}
-          enviando={enviando}
-        />
-      )}
+      {modalAberto && <ModalIndicacao onClose={() => setModalAberto(false)} onSubmit={adicionarIndicacao} enviando={enviando} />}
 
       <style>{`
         @keyframes shimmer {
