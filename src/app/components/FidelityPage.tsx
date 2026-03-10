@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import {
   Users, CheckCircle2, Gift, Trophy, Award,
   UserPlus, Download, Crown, Star, X, Loader2, Rocket,
-  Banknote, BookOpen, CheckCheck
+  Banknote, BookOpen, CheckCheck, HelpCircle
 } from "lucide-react";
 import { useFidelidade, type Nivel } from "../../hooks/useFidelidade";
 
@@ -12,33 +12,102 @@ const EIC_LOGO = "https://raw.githubusercontent.com/leobranco88/Studentprogressr
 function getBadgeStyle(nivel: Nivel) {
   switch (nivel) {
     case "iniciante": return { gradient: "linear-gradient(135deg, #E8E8E8 0%, #C8C8C8 50%, #A0A0A0 100%)", shadow: "0 8px 24px rgba(160,160,160,0.35)", pillBg: "#F5F0E8", pillText: "#8B7355" };
-    case "bronze": return { gradient: "linear-gradient(135deg, #E8A87C 0%, #CD7F32 50%, #A0522D 100%)", shadow: "0 8px 24px rgba(205,127,50,0.45)", pillBg: "#FEF3C7", pillText: "#92400E" };
-    case "prata": return { gradient: "linear-gradient(135deg, #E8E8F0 0%, #B0B8C8 50%, #8892A4 100%)", shadow: "0 8px 24px rgba(136,146,164,0.45)", pillBg: "#F3F4F6", pillText: "#374151" };
-    case "ouro": return { gradient: "linear-gradient(135deg, #FFE566 0%, #F5A800 50%, #D4870A 100%)", shadow: "0 8px 24px rgba(245,168,0,0.55)", pillBg: "#FEF9C3", pillText: "#92400E" };
-    case "ambassador": return { gradient: "linear-gradient(135deg, #FF8C42 0%, #FF5C00 50%, #6B3FA0 100%)", shadow: "0 8px 24px rgba(107,63,160,0.55)", pillBg: "#EDE7F6", pillText: "#6B3FA0" };
+    case "bronze":    return { gradient: "linear-gradient(135deg, #E8A87C 0%, #CD7F32 50%, #A0522D 100%)", shadow: "0 8px 24px rgba(205,127,50,0.45)", pillBg: "#FEF3C7", pillText: "#92400E" };
+    case "prata":     return { gradient: "linear-gradient(135deg, #E8E8F0 0%, #B0B8C8 50%, #8892A4 100%)", shadow: "0 8px 24px rgba(136,146,164,0.45)", pillBg: "#F3F4F6", pillText: "#374151" };
+    case "ouro":      return { gradient: "linear-gradient(135deg, #FFE566 0%, #F5A800 50%, #D4870A 100%)", shadow: "0 8px 24px rgba(245,168,0,0.55)", pillBg: "#FEF9C3", pillText: "#92400E" };
+    case "ambassador":return { gradient: "linear-gradient(135deg, #FF8C42 0%, #FF5C00 50%, #6B3FA0 100%)", shadow: "0 8px 24px rgba(107,63,160,0.55)", pillBg: "#EDE7F6", pillText: "#6B3FA0" };
   }
 }
 
 function getNivelConfig(nivel: Nivel) {
   const configs = {
-    iniciante: { icon: Rocket, name: "Iniciante", phrase: "Bem-vindo ao programa!", subPhrase: "Indique um amigo para começar sua jornada.", showCertificate: false, showBalance: false, showResgate: false },
-    bronze:    { icon: Star,   name: "Bronze",    phrase: "Você chegou no Bronze!", subPhrase: "Você tem R$50 disponíveis para resgatar.", showCertificate: false, showBalance: false, showResgate: true },
-    prata:     { icon: Star,   name: "Prata",     phrase: "Você chegou no Prata!", subPhrase: "Você tem R$100 disponíveis para resgatar.", showCertificate: false, showBalance: false, showResgate: true },
-    ouro:      { icon: Trophy, name: "Ouro",      phrase: "Você chegou no Ouro!", subPhrase: "Seu próximo mês é por nossa conta!", showCertificate: false, showBalance: false, showResgate: false },
-    ambassador:{ icon: Crown,  name: "Ambassador",phrase: "Você é um Embaixador EIC!", subPhrase: "A cada nova matrícula você acumula R$50.", showCertificate: true, showBalance: true, showResgate: true },
+    iniciante:  { icon: Rocket, name: "Iniciante",  phrase: "Bem-vindo ao programa!",     subPhrase: "Indique um amigo para começar sua jornada.", showCertificate: false, showBalance: false, showResgate: false },
+    bronze:     { icon: Star,   name: "Bronze",     phrase: "Você chegou no Bronze!",     subPhrase: "Você tem R$50 disponíveis para resgatar.",   showCertificate: false, showBalance: false, showResgate: true  },
+    prata:      { icon: Star,   name: "Prata",      phrase: "Você chegou no Prata!",      subPhrase: "Você tem R$100 disponíveis para resgatar.",  showCertificate: false, showBalance: false, showResgate: true  },
+    ouro:       { icon: Trophy, name: "Ouro",       phrase: "Você chegou no Ouro!",       subPhrase: "Seu próximo mês é por nossa conta!",         showCertificate: false, showBalance: false, showResgate: false },
+    ambassador: { icon: Crown,  name: "Ambassador", phrase: "Você é um Embaixador EIC!", subPhrase: "A cada nova matrícula você acumula R$50.",    showCertificate: true,  showBalance: true,  showResgate: true  },
   };
   return configs[nivel];
 }
 
 function getStatusColor(status: string) {
   switch (status) {
-    case "Matriculado": return "bg-green-100 text-green-700";
-    case "Em avaliação": return "bg-yellow-100 text-yellow-700";
-    case "Aguardando confirmação": return "bg-blue-100 text-blue-700";
-    default: return "bg-gray-100 text-gray-600";
+    case "Matriculado":           return "bg-green-100 text-green-700";
+    case "Em avaliação":          return "bg-yellow-100 text-yellow-700";
+    case "Aguardando confirmação":return "bg-blue-100 text-blue-700";
+    default:                      return "bg-gray-100 text-gray-600";
   }
 }
 
+// ——— Modal Como Funciona ———
+function ModalComoFunciona({ onClose }: { onClose: () => void }) {
+  const niveis = [
+    { icon: Rocket, name: "Iniciante",  matriculas: "0 matrículas",  beneficio: "Badge de boas-vindas",                    color: "#A0A0A0", bg: "#F5F5F5" },
+    { icon: Star,   name: "Bronze",     matriculas: "1 matrícula",   beneficio: "R$ 50 para resgatar via PIX",             color: "#CD7F32", bg: "#FEF3C7" },
+    { icon: Star,   name: "Prata",      matriculas: "2 matrículas",  beneficio: "R$ 100 para resgatar via PIX",            color: "#8892A4", bg: "#F3F4F6" },
+    { icon: Trophy, name: "Ouro",       matriculas: "3 matrículas",  beneficio: "1 mensalidade grátis (R$ 320)",           color: "#F5A800", bg: "#FEF9C3" },
+    { icon: Crown,  name: "Ambassador", matriculas: "4+ matrículas", beneficio: "R$ 50 por matrícula + Certificado",       color: "#6B3FA0", bg: "#EDE7F6" },
+  ];
+  const regras = [
+    "O ciclo do programa é semestral (Janeiro e Julho).",
+    "Apenas matrículas confirmadas pela equipe EIC contam.",
+    "A rematrícula do seu filho não conta como indicação.",
+    "Pagamentos via PIX são realizados todo dia 30.",
+    "O saldo Ambassador pode ser acumulado para trocar pelo material didático (R$ 350).",
+    "O badge Ambassador é permanente e vitalício.",
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+      <div className="w-full max-w-[430px] bg-white rounded-t-3xl p-6 pb-10 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold" style={{ fontFamily: "Playfair Display, serif", color: "#070738" }}>Como funciona?</h3>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100"><X size={20} className="text-gray-500" /></button>
+        </div>
+        <p className="text-sm text-gray-500 mb-6">Indique amigos para a EIC e suba de nível a cada matrícula confirmada. Quanto mais você indica, maiores são os benefícios!</p>
+
+        <h4 className="text-sm font-semibold mb-3" style={{ color: "#070738" }}>Os níveis do programa</h4>
+        <div className="space-y-3 mb-6">
+          {niveis.map((n) => {
+            const Icon = n.icon;
+            return (
+              <div key={n.name} className="flex items-center gap-4 p-3 rounded-xl" style={{ backgroundColor: n.bg }}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: n.color }}>
+                  <Icon size={20} color="white" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-sm" style={{ color: "#070738" }}>{n.name}</p>
+                    <p className="text-xs text-gray-500">{n.matriculas}</p>
+                  </div>
+                  <p className="text-xs mt-0.5" style={{ color: n.color }}>{n.beneficio}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <h4 className="text-sm font-semibold mb-3" style={{ color: "#070738" }}>Regras importantes</h4>
+        <div className="space-y-2 mb-6">
+          {regras.map((regra, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: "#EDE7F6" }}>
+                <span className="text-xs font-bold" style={{ color: "#6B3FA0" }}>{i + 1}</span>
+              </div>
+              <p className="text-sm text-gray-600">{regra}</p>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={onClose} className="w-full py-4 rounded-2xl text-white font-semibold" style={{ backgroundColor: "#6B3FA0" }}>
+          Entendi!
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ——— Modal Resgate ———
 interface ModalResgateProps {
   nivel: Nivel;
   saldo: number;
@@ -52,7 +121,6 @@ function ModalResgate({ nivel, saldo, onClose, onConfirmar, enviando, enviado }:
   const [tipo, setTipo] = useState<"pix" | "material_didatico">("pix");
   const [valor, setValor] = useState(nivel === "bronze" ? 50 : nivel === "prata" ? 100 : 50);
   const [chavePix, setChavePix] = useState("");
-
   const isFixo = nivel === "bronze" || nivel === "prata";
   const multiplos = isFixo ? [saldo] : Array.from({ length: Math.floor(saldo / 50) }, (_, i) => (i + 1) * 50);
   const podeMaterial = nivel === "ambassador" && saldo >= 350;
@@ -75,9 +143,7 @@ function ModalResgate({ nivel, saldo, onClose, onConfirmar, enviando, enviado }:
             <CheckCheck size={48} className="mx-auto mb-3" style={{ color: "#22c55e" }} />
             <p className="font-semibold text-lg" style={{ color: "#070738", fontFamily: "Playfair Display, serif" }}>Solicitação enviada!</p>
             <p className="text-sm text-gray-500 mt-2 px-4">
-              {tipo === "pix"
-                ? "O pagamento será realizado via PIX no dia 30. A equipe EIC confirmará em breve."
-                : "A equipe EIC entrará em contato para combinar a entrega do material didático."}
+              {tipo === "pix" ? "O pagamento será realizado via PIX no dia 30. A equipe EIC confirmará em breve." : "A equipe EIC entrará em contato para combinar a entrega do material didático."}
             </p>
           </div>
         ) : (
@@ -87,13 +153,11 @@ function ModalResgate({ nivel, saldo, onClose, onConfirmar, enviando, enviado }:
               <span className="font-bold text-lg" style={{ color: "#FF5C00" }}>R$ {saldo}</span>
             </div>
 
-            {/* Tipo — só Ambassador pode escolher entre PIX e material */}
             {nivel === "ambassador" && (
               <>
                 <p className="text-sm font-medium mb-3" style={{ color: "#070738" }}>Como deseja resgatar?</p>
                 <div className="grid grid-cols-2 gap-3 mb-5">
-                  <button onClick={() => setTipo("pix")}
-                    className="p-4 rounded-xl border-2 text-center transition-all"
+                  <button onClick={() => setTipo("pix")} className="p-4 rounded-xl border-2 text-center transition-all"
                     style={{ borderColor: tipo === "pix" ? "#6B3FA0" : "#E5E7EB", backgroundColor: tipo === "pix" ? "#F5F3FF" : "white" }}>
                     <Banknote size={24} className="mx-auto mb-1" style={{ color: tipo === "pix" ? "#6B3FA0" : "#9CA3AF" }} />
                     <p className="text-sm font-semibold" style={{ color: tipo === "pix" ? "#6B3FA0" : "#070738" }}>PIX</p>
@@ -110,14 +174,12 @@ function ModalResgate({ nivel, saldo, onClose, onConfirmar, enviando, enviado }:
               </>
             )}
 
-            {/* Valor — Ambassador pode escolher múltiplos */}
             {tipo === "pix" && nivel === "ambassador" && (
               <div className="mb-5">
                 <p className="text-sm font-medium mb-2" style={{ color: "#070738" }}>Valor a resgatar</p>
                 <div className="flex flex-wrap gap-2">
                   {multiplos.map((v) => (
-                    <button key={v} onClick={() => setValor(v)}
-                      className="px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all"
+                    <button key={v} onClick={() => setValor(v)} className="px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all"
                       style={{ borderColor: valor === v ? "#FF5C00" : "#E5E7EB", backgroundColor: valor === v ? "#FFF3ED" : "white", color: valor === v ? "#FF5C00" : "#6B7280" }}>
                       R$ {v}
                     </button>
@@ -126,7 +188,6 @@ function ModalResgate({ nivel, saldo, onClose, onConfirmar, enviando, enviado }:
               </div>
             )}
 
-            {/* Chave PIX */}
             {tipo === "pix" && (
               <div className="mb-5">
                 <label className="block text-sm font-medium mb-1" style={{ color: "#070738" }}>Sua chave PIX</label>
@@ -153,13 +214,8 @@ function ModalResgate({ nivel, saldo, onClose, onConfirmar, enviando, enviado }:
   );
 }
 
-interface ModalIndicacaoProps {
-  onClose: () => void;
-  onSubmit: (dados: { nomeIndicado: string; whatsappIndicado: string }) => Promise<void>;
-  enviando: boolean;
-}
-
-function ModalIndicacao({ onClose, onSubmit, enviando }: ModalIndicacaoProps) {
+// ——— Modal Indicação ———
+function ModalIndicacao({ onClose, onSubmit, enviando }: { onClose: () => void; onSubmit: (d: { nomeIndicado: string; whatsappIndicado: string }) => Promise<void>; enviando: boolean }) {
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [sucesso, setSucesso] = useState(false);
@@ -213,12 +269,14 @@ function ModalIndicacao({ onClose, onSubmit, enviando }: ModalIndicacaoProps) {
   );
 }
 
+// ——— Página Principal ———
 export function FidelityPage() {
   const { responsavelId } = useParams<{ responsavelId: string }>();
   const { indicacoes, responsavel, loading, enviando, nivel, matriculados, saldoAcumulado, adicionarIndicacao, solicitarResgate, solicitandoResgate, resgateEnviado } = useFidelidade(responsavelId ?? "");
   const [timedOut, setTimedOut] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
   const [modalResgateAberto, setModalResgateAberto] = useState(false);
+  const [modalComoFuncionaAberto, setModalComoFuncionaAberto] = useState(false);
 
   useEffect(() => {
     if (!loading) return;
@@ -259,7 +317,7 @@ export function FidelityPage() {
   const remainingBalance = 350 - saldoAcumulado;
 
   return (
-    <div className="max-w-[430px] mx-auto min-h-screen" style={{ fontFamily: "DM Sans, sans-serif" }}>
+    <div className="max-w-[430px] mx-auto min-h-screen" style={{ fontFamily: "DM Sans, sans-serif", backgroundColor: "#F8F6FF" }}>
       <header className="px-6 py-6 text-white" style={{ background: "linear-gradient(135deg, #FF5C00 0%, #6B3FA0 50%, #070738 100%)" }}>
         <div className="flex items-center justify-between mb-4">
           <img src={EIC_LOGO} alt="EIC" style={{ width: 80, filter: "brightness(0) invert(1)" }} />
@@ -273,7 +331,7 @@ export function FidelityPage() {
 
       <div className="px-4 pb-8">
         {/* Badge */}
-        <div className="bg-white rounded-2xl p-6 -mt-4 mb-4 text-center relative" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
+        <div className="bg-white rounded-2xl p-6 -mt-4 mb-4 text-center" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
           <div className="relative inline-block mb-4">
             {nivel === "ambassador" && (
               <div className="absolute -inset-2 rounded-full" style={{ background: "linear-gradient(90deg, #FF5C00, #F5A800, #6B3FA0, #FF5C00)", backgroundSize: "300% 100%", animation: "shimmer 3s linear infinite", opacity: 0.6 }} />
@@ -299,15 +357,14 @@ export function FidelityPage() {
           </div>
         )}
 
-        {/* Sinalizador de resgate Bronze/Prata */}
+        {/* Banner Bronze/Prata */}
         {(nivel === "bronze" || nivel === "prata") && (
-          <div className="rounded-2xl p-5 mb-4 flex items-center justify-between" style={{ background: nivel === "bronze" ? "linear-gradient(135deg, #E8A87C, #CD7F32)" : "linear-gradient(135deg, #E8E8F0, #8892A4)", boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}>
+          <div className="rounded-2xl p-5 mb-4 flex items-center justify-between" style={{ background: nivel === "bronze" ? "linear-gradient(135deg, #E8A87C, #CD7F32)" : "linear-gradient(135deg, #C8D0DC, #8892A4)", boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}>
             <div>
               <p className="text-white font-bold text-lg" style={{ fontFamily: "Playfair Display, serif" }}>R$ {saldoAcumulado} disponíveis!</p>
               <p className="text-white text-xs opacity-90 mt-0.5">Resgate via PIX até o dia 30</p>
             </div>
-            <button onClick={() => setModalResgateAberto(true)}
-              className="px-4 py-2 rounded-xl font-semibold text-sm"
+            <button onClick={() => setModalResgateAberto(true)} className="px-4 py-2 rounded-xl font-semibold text-sm"
               style={{ backgroundColor: "white", color: nivel === "bronze" ? "#CD7F32" : "#374151" }}>
               Resgatar
             </button>
@@ -374,12 +431,10 @@ export function FidelityPage() {
               </div>
             </div>
             {remainingBalance > 0 && saldoAcumulado > 0 && (
-              <p className="text-sm text-gray-600 mb-4">Faltam <span style={{ color: "#FF5C00", fontWeight: 600 }}>R$ {remainingBalance}</span> para resgatar o material didático</p>
+              <p className="text-sm text-gray-600 mb-4">Faltam <span style={{ color: "#FF5C00", fontWeight: 600 }}>R$ {remainingBalance}</span> para o material didático</p>
             )}
             {saldoAcumulado >= 50 && (
-              <button onClick={() => setModalResgateAberto(true)}
-                className="w-full py-3 rounded-xl text-white font-semibold flex items-center justify-center gap-2"
-                style={{ backgroundColor: "#FF5C00" }}>
+              <button onClick={() => setModalResgateAberto(true)} className="w-full py-3 rounded-xl text-white font-semibold flex items-center justify-center gap-2" style={{ backgroundColor: "#FF5C00" }}>
                 <Banknote size={18} /> Resgatar saldo
               </button>
             )}
@@ -407,7 +462,7 @@ export function FidelityPage() {
         </div>
 
         <button onClick={() => setModalAberto(true)} className="w-full py-4 rounded-2xl text-white font-semibold flex items-center justify-center gap-2 mb-4" style={{ backgroundColor: "#FF5C00" }}>
-          <UserPlus size={20} />Indicar um Amigo
+          <UserPlus size={20} /> Indicar um Amigo
         </button>
 
         {/* Certificado Ambassador */}
@@ -424,24 +479,24 @@ export function FidelityPage() {
           </div>
         )}
 
+        {/* Rodapé */}
         <footer className="text-center pt-8 pb-4">
           <img src={EIC_LOGO} alt="EIC" style={{ width: 90, margin: "0 auto 8px" }} />
-          <p className="text-sm mb-2" style={{ color: "#6B3FA0", fontWeight: 500 }}>eicschool.com.br</p>
-          <p className="text-xs text-gray-500 px-8">Este link é exclusivo para você.</p>
+          <p className="text-sm mb-3" style={{ color: "#6B3FA0", fontWeight: 500 }}>eicschool.com.br</p>
+          <button onClick={() => setModalComoFuncionaAberto(true)}
+            className="flex items-center gap-2 mx-auto text-sm text-gray-400 hover:text-gray-600 transition-colors">
+            <HelpCircle size={16} /> Como funciona o programa?
+          </button>
         </footer>
       </div>
 
       {modalAberto && <ModalIndicacao onClose={() => setModalAberto(false)} onSubmit={adicionarIndicacao} enviando={enviando} />}
       {modalResgateAberto && (
-        <ModalResgate
-          nivel={nivel}
-          saldo={saldoAcumulado}
-          onClose={() => setModalResgateAberto(false)}
+        <ModalResgate nivel={nivel} saldo={saldoAcumulado} onClose={() => setModalResgateAberto(false)}
           onConfirmar={async (dados) => { await solicitarResgate(dados); }}
-          enviando={solicitandoResgate}
-          enviado={resgateEnviado}
-        />
+          enviando={solicitandoResgate} enviado={resgateEnviado} />
       )}
+      {modalComoFuncionaAberto && <ModalComoFunciona onClose={() => setModalComoFuncionaAberto(false)} />}
 
       <style>{`
         @keyframes shimmer {
