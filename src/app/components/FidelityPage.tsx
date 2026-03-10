@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   Users, CheckCircle2, Gift, Trophy, Award,
-  UserPlus, Download, HelpCircle, Crown, Star, X, Loader2, Rocket,
-  ShoppingBag, CheckCheck, AlertCircle
+  UserPlus, Download, Crown, Star, X, Loader2, Rocket,
+  Banknote, BookOpen, CheckCheck
 } from "lucide-react";
 import { useFidelidade, type Nivel } from "../../hooks/useFidelidade";
 
@@ -21,11 +21,11 @@ function getBadgeStyle(nivel: Nivel) {
 
 function getNivelConfig(nivel: Nivel) {
   const configs = {
-    iniciante: { icon: Rocket, name: "Iniciante", phrase: "Bem-vindo ao programa!", subPhrase: "Indique um amigo para começar sua jornada.", remainingMessage: "Falta 1 matrícula para o nível Bronze", showCertificate: false, showBalance: false },
-    bronze: { icon: Star, name: "Bronze", phrase: "Você deu o primeiro passo!", subPhrase: "Continue indicando para subir de nível.", remainingMessage: "Falta 1 matrícula para o nível Prata", showCertificate: false, showBalance: false },
-    prata: { icon: Star, name: "Prata", phrase: "Você está quase lá!", subPhrase: "Mais 1 matrícula para o nível Ouro.", remainingMessage: "Falta 1 matrícula para o nível Ouro", showCertificate: false, showBalance: false },
-    ouro: { icon: Trophy, name: "Ouro", phrase: "Você chegou no Ouro!", subPhrase: "Seu próximo mês é por nossa conta.", extraPhrase: "E seu Certificado Ambassador está pronto para baixar.", remainingMessage: "Falta 1 matrícula para se tornar Ambassador", showCertificate: true, showBalance: false },
-    ambassador: { icon: Crown, name: "Ambassador", phrase: "Você é um Embaixador EIC!", subPhrase: "A cada nova matrícula você acumula R$50.", extraPhrase: "Junte R$350 e troque pelo material didático.", remainingMessage: "Você chegou ao nível máximo!", showCertificate: true, showBalance: true },
+    iniciante: { icon: Rocket, name: "Iniciante", phrase: "Bem-vindo ao programa!", subPhrase: "Indique um amigo para começar sua jornada.", showCertificate: false, showBalance: false, showResgate: false },
+    bronze:    { icon: Star,   name: "Bronze",    phrase: "Você chegou no Bronze!", subPhrase: "Você tem R$50 disponíveis para resgatar.", showCertificate: false, showBalance: false, showResgate: true },
+    prata:     { icon: Star,   name: "Prata",     phrase: "Você chegou no Prata!", subPhrase: "Você tem R$100 disponíveis para resgatar.", showCertificate: false, showBalance: false, showResgate: true },
+    ouro:      { icon: Trophy, name: "Ouro",      phrase: "Você chegou no Ouro!", subPhrase: "Seu próximo mês é por nossa conta!", showCertificate: false, showBalance: false, showResgate: false },
+    ambassador:{ icon: Crown,  name: "Ambassador",phrase: "Você é um Embaixador EIC!", subPhrase: "A cada nova matrícula você acumula R$50.", showCertificate: true, showBalance: true, showResgate: true },
   };
   return configs[nivel];
 }
@@ -40,66 +40,111 @@ function getStatusColor(status: string) {
 }
 
 interface ModalResgateProps {
+  nivel: Nivel;
   saldo: number;
   onClose: () => void;
-  onConfirmar: () => Promise<void>;
+  onConfirmar: (dados: { tipo: "pix" | "material_didatico"; valor: number; chavePix?: string }) => Promise<void>;
   enviando: boolean;
   enviado: boolean;
 }
 
-function ModalResgate({ saldo, onClose, onConfirmar, enviando, enviado }: ModalResgateProps) {
+function ModalResgate({ nivel, saldo, onClose, onConfirmar, enviando, enviado }: ModalResgateProps) {
+  const [tipo, setTipo] = useState<"pix" | "material_didatico">("pix");
+  const [valor, setValor] = useState(nivel === "bronze" ? 50 : nivel === "prata" ? 100 : 50);
+  const [chavePix, setChavePix] = useState("");
+
+  const isFixo = nivel === "bronze" || nivel === "prata";
+  const multiplos = isFixo ? [saldo] : Array.from({ length: Math.floor(saldo / 50) }, (_, i) => (i + 1) * 50);
+  const podeMaterial = nivel === "ambassador" && saldo >= 350;
+
+  const handleConfirmar = async () => {
+    if (tipo === "pix" && !chavePix.trim()) return;
+    await onConfirmar({ tipo, valor: tipo === "material_didatico" ? 350 : valor, chavePix: tipo === "pix" ? chavePix.trim() : undefined });
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-      <div className="w-full max-w-[430px] bg-white rounded-t-3xl p-6 pb-10">
+      <div className="w-full max-w-[430px] bg-white rounded-t-3xl p-6 pb-10 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold" style={{ fontFamily: "Playfair Display, serif", color: "#070738" }}>
-            Resgatar Material Didático
-          </h3>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100">
-            <X size={20} className="text-gray-500" />
-          </button>
+          <h3 className="text-xl font-bold" style={{ fontFamily: "Playfair Display, serif", color: "#070738" }}>Resgatar Benefício</h3>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100"><X size={20} className="text-gray-500" /></button>
         </div>
 
         {enviado ? (
           <div className="text-center py-8">
             <CheckCheck size={48} className="mx-auto mb-3" style={{ color: "#22c55e" }} />
             <p className="font-semibold text-lg" style={{ color: "#070738", fontFamily: "Playfair Display, serif" }}>Solicitação enviada!</p>
-            <p className="text-sm text-gray-500 mt-2">A equipe EIC entrará em contato para combinar a entrega do material.</p>
+            <p className="text-sm text-gray-500 mt-2 px-4">
+              {tipo === "pix"
+                ? "O pagamento será realizado via PIX no dia 30. A equipe EIC confirmará em breve."
+                : "A equipe EIC entrará em contato para combinar a entrega do material didático."}
+            </p>
           </div>
         ) : (
           <>
-            <div className="rounded-2xl p-4 mb-6" style={{ backgroundColor: "#F5F3FF", border: "1px solid #6B3FA0" }}>
-              <div className="flex items-center gap-3 mb-2">
-                <ShoppingBag size={24} style={{ color: "#6B3FA0" }} />
-                <span className="font-semibold" style={{ color: "#070738" }}>Kit Material Didático EIC</span>
-              </div>
-              <p className="text-sm text-gray-600 mb-3">Livros e materiais para o semestre letivo.</p>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Valor do resgate</span>
-                <span className="font-bold text-lg" style={{ color: "#FF5C00" }}>R$ 350</span>
-              </div>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-sm text-gray-500">Seu saldo</span>
-                <span className="font-bold text-lg" style={{ color: saldo >= 350 ? "#22c55e" : "#FF5C00" }}>R$ {saldo}</span>
-              </div>
+            <div className="rounded-xl p-3 mb-5 flex items-center justify-between" style={{ backgroundColor: "#F5F3FF" }}>
+              <span className="text-sm text-gray-600">Valor disponível</span>
+              <span className="font-bold text-lg" style={{ color: "#FF5C00" }}>R$ {saldo}</span>
             </div>
 
-            {saldo < 350 && (
-              <div className="flex items-start gap-2 rounded-xl p-3 mb-4" style={{ backgroundColor: "#FEF3C7" }}>
-                <AlertCircle size={16} style={{ color: "#F5A800", flexShrink: 0, marginTop: 2 }} />
-                <p className="text-xs" style={{ color: "#92400E" }}>Seu saldo atual é R$ {saldo}. Faltam R$ {350 - saldo} para resgatar o material. Você pode solicitar agora e combinar o pagamento da diferença com a equipe EIC.</p>
+            {/* Tipo — só Ambassador pode escolher entre PIX e material */}
+            {nivel === "ambassador" && (
+              <>
+                <p className="text-sm font-medium mb-3" style={{ color: "#070738" }}>Como deseja resgatar?</p>
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                  <button onClick={() => setTipo("pix")}
+                    className="p-4 rounded-xl border-2 text-center transition-all"
+                    style={{ borderColor: tipo === "pix" ? "#6B3FA0" : "#E5E7EB", backgroundColor: tipo === "pix" ? "#F5F3FF" : "white" }}>
+                    <Banknote size={24} className="mx-auto mb-1" style={{ color: tipo === "pix" ? "#6B3FA0" : "#9CA3AF" }} />
+                    <p className="text-sm font-semibold" style={{ color: tipo === "pix" ? "#6B3FA0" : "#070738" }}>PIX</p>
+                    <p className="text-xs text-gray-500">Receba no dia 30</p>
+                  </button>
+                  <button onClick={() => podeMaterial && setTipo("material_didatico")}
+                    className={`p-4 rounded-xl border-2 text-center transition-all ${!podeMaterial ? "opacity-40 cursor-not-allowed" : ""}`}
+                    style={{ borderColor: tipo === "material_didatico" ? "#6B3FA0" : "#E5E7EB", backgroundColor: tipo === "material_didatico" ? "#F5F3FF" : "white" }}>
+                    <BookOpen size={24} className="mx-auto mb-1" style={{ color: tipo === "material_didatico" ? "#6B3FA0" : "#9CA3AF" }} />
+                    <p className="text-sm font-semibold" style={{ color: tipo === "material_didatico" ? "#6B3FA0" : "#070738" }}>Material</p>
+                    <p className="text-xs text-gray-500">{podeMaterial ? "R$ 350" : `Faltam R$ ${350 - saldo}`}</p>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Valor — Ambassador pode escolher múltiplos */}
+            {tipo === "pix" && nivel === "ambassador" && (
+              <div className="mb-5">
+                <p className="text-sm font-medium mb-2" style={{ color: "#070738" }}>Valor a resgatar</p>
+                <div className="flex flex-wrap gap-2">
+                  {multiplos.map((v) => (
+                    <button key={v} onClick={() => setValor(v)}
+                      className="px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all"
+                      style={{ borderColor: valor === v ? "#FF5C00" : "#E5E7EB", backgroundColor: valor === v ? "#FFF3ED" : "white", color: valor === v ? "#FF5C00" : "#6B7280" }}>
+                      R$ {v}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
-            <p className="text-xs text-gray-500 mb-6 text-center">A equipe EIC confirmará sua solicitação e combinará a entrega em até 2 dias úteis.</p>
+            {/* Chave PIX */}
+            {tipo === "pix" && (
+              <div className="mb-5">
+                <label className="block text-sm font-medium mb-1" style={{ color: "#070738" }}>Sua chave PIX</label>
+                <input type="text" value={chavePix} onChange={(e) => setChavePix(e.target.value)}
+                  placeholder="CPF, e-mail, telefone ou chave aleatória"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-purple-400 text-sm"
+                  style={{ fontFamily: "DM Sans, sans-serif" }} />
+              </div>
+            )}
 
-            <button
-              onClick={onConfirmar}
-              disabled={enviando}
+            <p className="text-xs text-gray-400 mb-4 text-center">
+              {tipo === "pix" ? "Pagamentos realizados todo dia 30 do mês corrente." : "A entrega será combinada com a equipe EIC em até 2 dias úteis."}
+            </p>
+
+            <button onClick={handleConfirmar} disabled={enviando || (tipo === "pix" && !chavePix.trim())}
               className="w-full py-4 rounded-2xl text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-              style={{ backgroundColor: "#FF5C00" }}
-            >
-              {enviando ? <Loader2 size={20} className="animate-spin" /> : <><ShoppingBag size={20} />Confirmar Solicitação</>}
+              style={{ backgroundColor: "#FF5C00" }}>
+              {enviando ? <Loader2 size={20} className="animate-spin" /> : <><CheckCheck size={20} />Confirmar Solicitação</>}
             </button>
           </>
         )}
@@ -170,10 +215,7 @@ function ModalIndicacao({ onClose, onSubmit, enviando }: ModalIndicacaoProps) {
 
 export function FidelityPage() {
   const { responsavelId } = useParams<{ responsavelId: string }>();
-  const {
-    indicacoes, responsavel, loading, enviando, nivel, matriculados,
-    saldoAcumulado, adicionarIndicacao, solicitarResgate, solicitandoResgate, resgateEnviado
-  } = useFidelidade(responsavelId ?? "");
+  const { indicacoes, responsavel, loading, enviando, nivel, matriculados, saldoAcumulado, adicionarIndicacao, solicitarResgate, solicitandoResgate, resgateEnviado } = useFidelidade(responsavelId ?? "");
   const [timedOut, setTimedOut] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
   const [modalResgateAberto, setModalResgateAberto] = useState(false);
@@ -214,16 +256,10 @@ export function FidelityPage() {
   const LevelIcon = config.icon;
   const progress = Math.min((matriculados / 4) * 100, 100);
   const balanceProgress = Math.min((saldoAcumulado / 350) * 100, 100);
-  const canRedeem = saldoAcumulado >= 350;
   const remainingBalance = 350 - saldoAcumulado;
-
-  const handleSolicitarResgate = async () => {
-    await solicitarResgate("material_didatico", Math.min(saldoAcumulado, 350));
-  };
 
   return (
     <div className="max-w-[430px] mx-auto min-h-screen" style={{ fontFamily: "DM Sans, sans-serif" }}>
-      {/* HEADER */}
       <header className="px-6 py-6 text-white" style={{ background: "linear-gradient(135deg, #FF5C00 0%, #6B3FA0 50%, #070738 100%)" }}>
         <div className="flex items-center justify-between mb-4">
           <img src={EIC_LOGO} alt="EIC" style={{ width: 80, filter: "brightness(0) invert(1)" }} />
@@ -236,7 +272,7 @@ export function FidelityPage() {
       </header>
 
       <div className="px-4 pb-8">
-        {/* CARD DE NÍVEL */}
+        {/* Badge */}
         <div className="bg-white rounded-2xl p-6 -mt-4 mb-4 text-center relative" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
           <div className="relative inline-block mb-4">
             {nivel === "ambassador" && (
@@ -251,11 +287,10 @@ export function FidelityPage() {
             {config.name.toUpperCase()}
           </div>
           <h3 className="text-2xl mb-2" style={{ fontFamily: "Playfair Display, serif", fontWeight: 700, color: "#070738" }}>{config.phrase}</h3>
-          <p className="text-sm text-gray-600 mb-1">{config.subPhrase}</p>
-          {"extraPhrase" in config && config.extraPhrase && <p className="text-xs text-gray-500">{config.extraPhrase}</p>}
+          <p className="text-sm text-gray-600">{config.subPhrase}</p>
         </div>
 
-        {/* CELEBRAÇÃO OURO */}
+        {/* Banner Ouro */}
         {nivel === "ouro" && (
           <div className="rounded-2xl p-6 text-white text-center mb-4" style={{ background: "linear-gradient(135deg, #FFE566 0%, #F5A800 50%, #D4870A 100%)", boxShadow: "0 4px 20px rgba(245,168,0,0.3)" }}>
             <Trophy size={32} className="mx-auto mb-3" />
@@ -264,7 +299,22 @@ export function FidelityPage() {
           </div>
         )}
 
-        {/* MÉTRICAS */}
+        {/* Sinalizador de resgate Bronze/Prata */}
+        {(nivel === "bronze" || nivel === "prata") && (
+          <div className="rounded-2xl p-5 mb-4 flex items-center justify-between" style={{ background: nivel === "bronze" ? "linear-gradient(135deg, #E8A87C, #CD7F32)" : "linear-gradient(135deg, #E8E8F0, #8892A4)", boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}>
+            <div>
+              <p className="text-white font-bold text-lg" style={{ fontFamily: "Playfair Display, serif" }}>R$ {saldoAcumulado} disponíveis!</p>
+              <p className="text-white text-xs opacity-90 mt-0.5">Resgate via PIX até o dia 30</p>
+            </div>
+            <button onClick={() => setModalResgateAberto(true)}
+              className="px-4 py-2 rounded-xl font-semibold text-sm"
+              style={{ backgroundColor: "white", color: nivel === "bronze" ? "#CD7F32" : "#374151" }}>
+              Resgatar
+            </button>
+          </div>
+        )}
+
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="bg-white rounded-2xl p-4 text-center" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
             <Users size={24} className="mx-auto mb-2" style={{ color: "#FF5C00" }} />
@@ -278,24 +328,24 @@ export function FidelityPage() {
           </div>
           <div className="bg-white rounded-2xl p-4 text-center" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
             <Gift size={24} className="mx-auto mb-2" style={{ color: "#F5A800" }} />
-            <div className="text-xs mb-1 leading-tight" style={{ color: "#070738", fontWeight: 600 }}>
-              {nivel === "ambassador" ? `R$ ${saldoAcumulado}` : nivel === "ouro" ? "1 mês grátis" : "Badge"}
+            <div className="text-sm mb-1 font-semibold" style={{ color: "#070738" }}>
+              {nivel === "ambassador" ? `R$ ${saldoAcumulado}` : nivel === "ouro" ? "1 mês" : nivel === "bronze" ? "R$50" : nivel === "prata" ? "R$100" : "—"}
             </div>
             <div className="text-xs text-gray-600">Benefício</div>
           </div>
         </div>
 
-        {/* BARRA DE PROGRESSO */}
+        {/* Barra de progresso */}
         {!config.showBalance && (
           <div className="bg-white rounded-2xl p-6 mb-4" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
             <div className="flex items-center gap-2 mb-4">
               <Trophy size={20} style={{ color: "#6B3FA0" }} />
-              <h4 className="text-sm" style={{ color: "#070738", fontWeight: 600 }}>{config.remainingMessage}</h4>
+              <h4 className="text-sm font-semibold" style={{ color: "#070738" }}>
+                {matriculados < 4 ? `Falta${4 - matriculados > 1 ? "m" : ""} ${4 - matriculados} matrícula${4 - matriculados > 1 ? "s" : ""} para Ambassador` : "Nível máximo atingido!"}
+              </h4>
             </div>
-            <div className="mb-4">
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full transition-all duration-500" style={{ width: `${progress}%`, backgroundColor: "#6B3FA0" }} />
-              </div>
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-4">
+              <div className="h-full transition-all duration-500" style={{ width: `${progress}%`, backgroundColor: "#6B3FA0" }} />
             </div>
             <div className="flex justify-between items-center">
               {[{ label: "Bronze", min: 1, color: "#CD7F32" }, { label: "Prata", min: 2, color: "#B0B8C8" }, { label: "Ouro", min: 3, color: "#F5A800" }, { label: "Ambassador", min: 4, color: "#6B3FA0" }].map((n) => (
@@ -308,45 +358,35 @@ export function FidelityPage() {
           </div>
         )}
 
-        {/* SALDO AMBASSADOR */}
+        {/* Saldo Ambassador */}
         {config.showBalance && (
           <div className="bg-white rounded-2xl p-6 mb-4" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)", border: "2px solid #6B3FA0" }}>
             <h4 className="text-sm text-gray-600 mb-2">Seu saldo</h4>
             <div className="text-4xl mb-3" style={{ fontFamily: "Playfair Display, serif", fontWeight: 700, color: "#FF5C00" }}>R$ {saldoAcumulado}</div>
             <p className="text-xs text-gray-600 mb-4">A cada nova matrícula confirmada, você acumula R$50</p>
-            <div className="mb-3">
+            <div className="mb-4">
               <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full transition-all duration-500" style={{ width: `${balanceProgress}%`, backgroundColor: canRedeem ? "#F5A800" : "#6B3FA0" }} />
+                <div className="h-full transition-all duration-500" style={{ width: `${balanceProgress}%`, backgroundColor: saldoAcumulado >= 350 ? "#F5A800" : "#6B3FA0" }} />
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-xs text-gray-400">R$ 0</span>
+                <span className="text-xs text-gray-400">R$ 350 (material)</span>
               </div>
             </div>
-            {!canRedeem ? (
-              <p className="text-sm text-gray-600">Faltam <span style={{ color: "#FF5C00", fontWeight: 600 }}>R$ {remainingBalance}</span> para resgatar o material didático</p>
-            ) : (
-              <button
-                onClick={() => setModalResgateAberto(true)}
-                className="w-full py-3 rounded-xl text-white font-semibold mt-2 flex items-center justify-center gap-2"
-                style={{ backgroundColor: "#FF5C00" }}
-              >
-                <ShoppingBag size={18} />
-                Resgatar material didático
-              </button>
+            {remainingBalance > 0 && saldoAcumulado > 0 && (
+              <p className="text-sm text-gray-600 mb-4">Faltam <span style={{ color: "#FF5C00", fontWeight: 600 }}>R$ {remainingBalance}</span> para resgatar o material didático</p>
             )}
-
-            {/* Botão mesmo sem saldo suficiente */}
-            {!canRedeem && saldoAcumulado > 0 && (
-              <button
-                onClick={() => setModalResgateAberto(true)}
-                className="w-full py-3 rounded-xl font-semibold mt-3 flex items-center justify-center gap-2 text-sm"
-                style={{ backgroundColor: "#F5F3FF", color: "#6B3FA0", border: "1px solid #6B3FA0" }}
-              >
-                <ShoppingBag size={16} />
-                Solicitar resgate parcial
+            {saldoAcumulado >= 50 && (
+              <button onClick={() => setModalResgateAberto(true)}
+                className="w-full py-3 rounded-xl text-white font-semibold flex items-center justify-center gap-2"
+                style={{ backgroundColor: "#FF5C00" }}>
+                <Banknote size={18} /> Resgatar saldo
               </button>
             )}
           </div>
         )}
 
-        {/* LISTA DE INDICAÇÕES */}
+        {/* Indicações */}
         <div className="mb-4">
           <h3 className="text-2xl mb-4" style={{ fontFamily: "Playfair Display, serif", fontWeight: 600, color: "#070738" }}>Suas Indicações</h3>
           <div className="space-y-3">
@@ -366,12 +406,11 @@ export function FidelityPage() {
           </div>
         </div>
 
-        {/* BOTÃO INDICAR */}
         <button onClick={() => setModalAberto(true)} className="w-full py-4 rounded-2xl text-white font-semibold flex items-center justify-center gap-2 mb-4" style={{ backgroundColor: "#FF5C00" }}>
           <UserPlus size={20} />Indicar um Amigo
         </button>
 
-        {/* CERTIFICADO */}
+        {/* Certificado Ambassador */}
         {config.showCertificate && (
           <div className="rounded-2xl p-6 text-white text-center mb-4" style={{ background: "linear-gradient(135deg, #FF5C00 0%, #6B3FA0 100%)", boxShadow: "0 4px 20px rgba(255,92,0,0.3)" }}>
             <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: "rgba(245,168,0,0.3)" }}>
@@ -379,18 +418,12 @@ export function FidelityPage() {
             </div>
             <h3 className="text-xl mb-2" style={{ fontFamily: "Playfair Display, serif", fontWeight: 600 }}>Seu Certificado Ambassador está pronto!</h3>
             <p className="text-sm mb-4 opacity-90">Baixe, imprima e compartilhe.</p>
-            {nivel === "ouro" ? (
-              <div className="space-y-2">
-                <button className="w-full bg-white text-gray-800 px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2"><Download size={18} /> Ver Certificado</button>
-                <button className="w-full bg-transparent text-white px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ border: "2px solid white" }}><HelpCircle size={18} /> Como usar meu mês grátis?</button>
-              </div>
-            ) : (
-              <button className="bg-white text-gray-800 px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 mx-auto"><Download size={18} /> Ver Certificado</button>
-            )}
+            <button className="bg-white text-gray-800 px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 mx-auto">
+              <Download size={18} /> Ver Certificado
+            </button>
           </div>
         )}
 
-        {/* RODAPÉ */}
         <footer className="text-center pt-8 pb-4">
           <img src={EIC_LOGO} alt="EIC" style={{ width: 90, margin: "0 auto 8px" }} />
           <p className="text-sm mb-2" style={{ color: "#6B3FA0", fontWeight: 500 }}>eicschool.com.br</p>
@@ -399,12 +432,12 @@ export function FidelityPage() {
       </div>
 
       {modalAberto && <ModalIndicacao onClose={() => setModalAberto(false)} onSubmit={adicionarIndicacao} enviando={enviando} />}
-
       {modalResgateAberto && (
         <ModalResgate
+          nivel={nivel}
           saldo={saldoAcumulado}
           onClose={() => setModalResgateAberto(false)}
-          onConfirmar={handleSolicitarResgate}
+          onConfirmar={async (dados) => { await solicitarResgate(dados); }}
           enviando={solicitandoResgate}
           enviado={resgateEnviado}
         />
