@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   Users, CheckCircle2, Gift, Trophy, Award,
-  UserPlus, Download, HelpCircle, Crown, Star, X, Loader2, Rocket
+  UserPlus, Download, HelpCircle, Crown, Star, X, Loader2, Rocket,
+  ShoppingBag, CheckCheck, AlertCircle
 } from "lucide-react";
 import { useFidelidade, type Nivel } from "../../hooks/useFidelidade";
 
@@ -10,73 +11,21 @@ const EIC_LOGO = "https://raw.githubusercontent.com/leobranco88/Studentprogressr
 
 function getBadgeStyle(nivel: Nivel) {
   switch (nivel) {
-    case "iniciante": return {
-      gradient: "linear-gradient(135deg, #E8E8E8 0%, #C8C8C8 50%, #A0A0A0 100%)",
-      shadow: "0 8px 24px rgba(160,160,160,0.35)",
-      pillBg: "#F5F0E8", pillText: "#8B7355"
-    };
-    case "bronze": return {
-      gradient: "linear-gradient(135deg, #E8A87C 0%, #CD7F32 50%, #A0522D 100%)",
-      shadow: "0 8px 24px rgba(205,127,50,0.45)",
-      pillBg: "#FEF3C7", pillText: "#92400E"
-    };
-    case "prata": return {
-      gradient: "linear-gradient(135deg, #E8E8F0 0%, #B0B8C8 50%, #8892A4 100%)",
-      shadow: "0 8px 24px rgba(136,146,164,0.45)",
-      pillBg: "#F3F4F6", pillText: "#374151"
-    };
-    case "ouro": return {
-      gradient: "linear-gradient(135deg, #FFE566 0%, #F5A800 50%, #D4870A 100%)",
-      shadow: "0 8px 24px rgba(245,168,0,0.55)",
-      pillBg: "#FEF9C3", pillText: "#92400E"
-    };
-    case "ambassador": return {
-      gradient: "linear-gradient(135deg, #FF8C42 0%, #FF5C00 50%, #6B3FA0 100%)",
-      shadow: "0 8px 24px rgba(107,63,160,0.55)",
-      pillBg: "#EDE7F6", pillText: "#6B3FA0"
-    };
+    case "iniciante": return { gradient: "linear-gradient(135deg, #E8E8E8 0%, #C8C8C8 50%, #A0A0A0 100%)", shadow: "0 8px 24px rgba(160,160,160,0.35)", pillBg: "#F5F0E8", pillText: "#8B7355" };
+    case "bronze": return { gradient: "linear-gradient(135deg, #E8A87C 0%, #CD7F32 50%, #A0522D 100%)", shadow: "0 8px 24px rgba(205,127,50,0.45)", pillBg: "#FEF3C7", pillText: "#92400E" };
+    case "prata": return { gradient: "linear-gradient(135deg, #E8E8F0 0%, #B0B8C8 50%, #8892A4 100%)", shadow: "0 8px 24px rgba(136,146,164,0.45)", pillBg: "#F3F4F6", pillText: "#374151" };
+    case "ouro": return { gradient: "linear-gradient(135deg, #FFE566 0%, #F5A800 50%, #D4870A 100%)", shadow: "0 8px 24px rgba(245,168,0,0.55)", pillBg: "#FEF9C3", pillText: "#92400E" };
+    case "ambassador": return { gradient: "linear-gradient(135deg, #FF8C42 0%, #FF5C00 50%, #6B3FA0 100%)", shadow: "0 8px 24px rgba(107,63,160,0.55)", pillBg: "#EDE7F6", pillText: "#6B3FA0" };
   }
 }
 
 function getNivelConfig(nivel: Nivel) {
   const configs = {
-    iniciante: {
-      icon: Rocket, name: "Iniciante",
-      phrase: "Bem-vindo ao programa!",
-      subPhrase: "Indique um amigo para começar sua jornada.",
-      remainingMessage: "Falta 1 matrícula para o nível Bronze",
-      showCertificate: false, showBalance: false,
-    },
-    bronze: {
-      icon: Star, name: "Bronze",
-      phrase: "Você deu o primeiro passo!",
-      subPhrase: "Continue indicando para subir de nível.",
-      remainingMessage: "Falta 1 matrícula para o nível Prata",
-      showCertificate: false, showBalance: false,
-    },
-    prata: {
-      icon: Star, name: "Prata",
-      phrase: "Você está quase lá!",
-      subPhrase: "Mais 1 matrícula para o nível Ouro.",
-      remainingMessage: "Falta 1 matrícula para o nível Ouro",
-      showCertificate: false, showBalance: false,
-    },
-    ouro: {
-      icon: Trophy, name: "Ouro",
-      phrase: "Você chegou no Ouro!",
-      subPhrase: "Seu próximo mês é por nossa conta.",
-      extraPhrase: "E seu Certificado Ambassador está pronto para baixar.",
-      remainingMessage: "Falta 1 matrícula para se tornar Ambassador",
-      showCertificate: true, showBalance: false,
-    },
-    ambassador: {
-      icon: Crown, name: "Ambassador",
-      phrase: "Você é um Embaixador EIC!",
-      subPhrase: "A cada nova matrícula você acumula R$50.",
-      extraPhrase: "Junte R$350 e troque pelo material didático.",
-      remainingMessage: "Você chegou ao nível máximo!",
-      showCertificate: true, showBalance: true,
-    },
+    iniciante: { icon: Rocket, name: "Iniciante", phrase: "Bem-vindo ao programa!", subPhrase: "Indique um amigo para começar sua jornada.", remainingMessage: "Falta 1 matrícula para o nível Bronze", showCertificate: false, showBalance: false },
+    bronze: { icon: Star, name: "Bronze", phrase: "Você deu o primeiro passo!", subPhrase: "Continue indicando para subir de nível.", remainingMessage: "Falta 1 matrícula para o nível Prata", showCertificate: false, showBalance: false },
+    prata: { icon: Star, name: "Prata", phrase: "Você está quase lá!", subPhrase: "Mais 1 matrícula para o nível Ouro.", remainingMessage: "Falta 1 matrícula para o nível Ouro", showCertificate: false, showBalance: false },
+    ouro: { icon: Trophy, name: "Ouro", phrase: "Você chegou no Ouro!", subPhrase: "Seu próximo mês é por nossa conta.", extraPhrase: "E seu Certificado Ambassador está pronto para baixar.", remainingMessage: "Falta 1 matrícula para se tornar Ambassador", showCertificate: true, showBalance: false },
+    ambassador: { icon: Crown, name: "Ambassador", phrase: "Você é um Embaixador EIC!", subPhrase: "A cada nova matrícula você acumula R$50.", extraPhrase: "Junte R$350 e troque pelo material didático.", remainingMessage: "Você chegou ao nível máximo!", showCertificate: true, showBalance: true },
   };
   return configs[nivel];
 }
@@ -88,6 +37,75 @@ function getStatusColor(status: string) {
     case "Aguardando confirmação": return "bg-blue-100 text-blue-700";
     default: return "bg-gray-100 text-gray-600";
   }
+}
+
+interface ModalResgateProps {
+  saldo: number;
+  onClose: () => void;
+  onConfirmar: () => Promise<void>;
+  enviando: boolean;
+  enviado: boolean;
+}
+
+function ModalResgate({ saldo, onClose, onConfirmar, enviando, enviado }: ModalResgateProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+      <div className="w-full max-w-[430px] bg-white rounded-t-3xl p-6 pb-10">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold" style={{ fontFamily: "Playfair Display, serif", color: "#070738" }}>
+            Resgatar Material Didático
+          </h3>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100">
+            <X size={20} className="text-gray-500" />
+          </button>
+        </div>
+
+        {enviado ? (
+          <div className="text-center py-8">
+            <CheckCheck size={48} className="mx-auto mb-3" style={{ color: "#22c55e" }} />
+            <p className="font-semibold text-lg" style={{ color: "#070738", fontFamily: "Playfair Display, serif" }}>Solicitação enviada!</p>
+            <p className="text-sm text-gray-500 mt-2">A equipe EIC entrará em contato para combinar a entrega do material.</p>
+          </div>
+        ) : (
+          <>
+            <div className="rounded-2xl p-4 mb-6" style={{ backgroundColor: "#F5F3FF", border: "1px solid #6B3FA0" }}>
+              <div className="flex items-center gap-3 mb-2">
+                <ShoppingBag size={24} style={{ color: "#6B3FA0" }} />
+                <span className="font-semibold" style={{ color: "#070738" }}>Kit Material Didático EIC</span>
+              </div>
+              <p className="text-sm text-gray-600 mb-3">Livros e materiais para o semestre letivo.</p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Valor do resgate</span>
+                <span className="font-bold text-lg" style={{ color: "#FF5C00" }}>R$ 350</span>
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-sm text-gray-500">Seu saldo</span>
+                <span className="font-bold text-lg" style={{ color: saldo >= 350 ? "#22c55e" : "#FF5C00" }}>R$ {saldo}</span>
+              </div>
+            </div>
+
+            {saldo < 350 && (
+              <div className="flex items-start gap-2 rounded-xl p-3 mb-4" style={{ backgroundColor: "#FEF3C7" }}>
+                <AlertCircle size={16} style={{ color: "#F5A800", flexShrink: 0, marginTop: 2 }} />
+                <p className="text-xs" style={{ color: "#92400E" }}>Seu saldo atual é R$ {saldo}. Faltam R$ {350 - saldo} para resgatar o material. Você pode solicitar agora e combinar o pagamento da diferença com a equipe EIC.</p>
+              </div>
+            )}
+
+            <p className="text-xs text-gray-500 mb-6 text-center">A equipe EIC confirmará sua solicitação e combinará a entrega em até 2 dias úteis.</p>
+
+            <button
+              onClick={onConfirmar}
+              disabled={enviando}
+              className="w-full py-4 rounded-2xl text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{ backgroundColor: "#FF5C00" }}
+            >
+              {enviando ? <Loader2 size={20} className="animate-spin" /> : <><ShoppingBag size={20} />Confirmar Solicitação</>}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 interface ModalIndicacaoProps {
@@ -112,12 +130,8 @@ function ModalIndicacao({ onClose, onSubmit, enviando }: ModalIndicacaoProps) {
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
       <div className="w-full max-w-[430px] bg-white rounded-t-3xl p-6 pb-10">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold" style={{ fontFamily: "Playfair Display, serif", color: "#070738" }}>
-            Indicar um Amigo
-          </h3>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100">
-            <X size={20} className="text-gray-500" />
-          </button>
+          <h3 className="text-xl font-bold" style={{ fontFamily: "Playfair Display, serif", color: "#070738" }}>Indicar um Amigo</h3>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100"><X size={20} className="text-gray-500" /></button>
         </div>
         {sucesso ? (
           <div className="text-center py-8">
@@ -156,9 +170,13 @@ function ModalIndicacao({ onClose, onSubmit, enviando }: ModalIndicacaoProps) {
 
 export function FidelityPage() {
   const { responsavelId } = useParams<{ responsavelId: string }>();
-  const { indicacoes, responsavel, loading, enviando, nivel, matriculados, saldoAcumulado, adicionarIndicacao } = useFidelidade(responsavelId ?? "");
+  const {
+    indicacoes, responsavel, loading, enviando, nivel, matriculados,
+    saldoAcumulado, adicionarIndicacao, solicitarResgate, solicitandoResgate, resgateEnviado
+  } = useFidelidade(responsavelId ?? "");
   const [timedOut, setTimedOut] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
+  const [modalResgateAberto, setModalResgateAberto] = useState(false);
 
   useEffect(() => {
     if (!loading) return;
@@ -199,6 +217,10 @@ export function FidelityPage() {
   const canRedeem = saldoAcumulado >= 350;
   const remainingBalance = 350 - saldoAcumulado;
 
+  const handleSolicitarResgate = async () => {
+    await solicitarResgate("material_didatico", Math.min(saldoAcumulado, 350));
+  };
+
   return (
     <div className="max-w-[430px] mx-auto min-h-screen" style={{ fontFamily: "DM Sans, sans-serif" }}>
       {/* HEADER */}
@@ -225,11 +247,9 @@ export function FidelityPage() {
               <LevelIcon size={nivel === "ambassador" ? 56 : 48} className="relative z-10" style={{ color: "#FFFFFF" }} />
             </div>
           </div>
-
           <div className="inline-block px-4 py-1 rounded-full text-xs font-semibold mb-3" style={{ backgroundColor: badgeStyle.pillBg, color: badgeStyle.pillText }}>
             {config.name.toUpperCase()}
           </div>
-
           <h3 className="text-2xl mb-2" style={{ fontFamily: "Playfair Display, serif", fontWeight: 700, color: "#070738" }}>{config.phrase}</h3>
           <p className="text-sm text-gray-600 mb-1">{config.subPhrase}</p>
           {"extraPhrase" in config && config.extraPhrase && <p className="text-xs text-gray-500">{config.extraPhrase}</p>}
@@ -302,7 +322,26 @@ export function FidelityPage() {
             {!canRedeem ? (
               <p className="text-sm text-gray-600">Faltam <span style={{ color: "#FF5C00", fontWeight: 600 }}>R$ {remainingBalance}</span> para resgatar o material didático</p>
             ) : (
-              <button className="w-full py-3 rounded-xl text-white font-semibold mt-2" style={{ backgroundColor: "#FF5C00" }}>Resgatar material didático</button>
+              <button
+                onClick={() => setModalResgateAberto(true)}
+                className="w-full py-3 rounded-xl text-white font-semibold mt-2 flex items-center justify-center gap-2"
+                style={{ backgroundColor: "#FF5C00" }}
+              >
+                <ShoppingBag size={18} />
+                Resgatar material didático
+              </button>
+            )}
+
+            {/* Botão mesmo sem saldo suficiente */}
+            {!canRedeem && saldoAcumulado > 0 && (
+              <button
+                onClick={() => setModalResgateAberto(true)}
+                className="w-full py-3 rounded-xl font-semibold mt-3 flex items-center justify-center gap-2 text-sm"
+                style={{ backgroundColor: "#F5F3FF", color: "#6B3FA0", border: "1px solid #6B3FA0" }}
+              >
+                <ShoppingBag size={16} />
+                Solicitar resgate parcial
+              </button>
             )}
           </div>
         )}
@@ -360,6 +399,16 @@ export function FidelityPage() {
       </div>
 
       {modalAberto && <ModalIndicacao onClose={() => setModalAberto(false)} onSubmit={adicionarIndicacao} enviando={enviando} />}
+
+      {modalResgateAberto && (
+        <ModalResgate
+          saldo={saldoAcumulado}
+          onClose={() => setModalResgateAberto(false)}
+          onConfirmar={handleSolicitarResgate}
+          enviando={solicitandoResgate}
+          enviado={resgateEnviado}
+        />
+      )}
 
       <style>{`
         @keyframes shimmer {
