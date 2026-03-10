@@ -6,7 +6,6 @@ import {
   onSnapshot,
   addDoc,
   serverTimestamp,
-  orderBy,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
@@ -32,13 +31,14 @@ export interface Responsavel {
   nome: string;
 }
 
-export type Nivel = "bronze" | "prata" | "ouro" | "ambassador";
+export type Nivel = "iniciante" | "bronze" | "prata" | "ouro" | "ambassador";
 
-function calcularNivel(matriculados: number): Nivel {
+export function calcularNivel(matriculados: number): Nivel {
   if (matriculados >= 4) return "ambassador";
   if (matriculados >= 3) return "ouro";
   if (matriculados >= 2) return "prata";
-  return "bronze";
+  if (matriculados >= 1) return "bronze";
+  return "iniciante";
 }
 
 export function useFidelidade(responsavelId: string) {
@@ -50,10 +50,10 @@ export function useFidelidade(responsavelId: string) {
   useEffect(() => {
     if (!responsavelId) return;
 
-   const q = query(
-  collection(db, "indicacoes"),
-  where("responsavelId", "==", responsavelId)
-);
+    const q = query(
+      collection(db, "indicacoes"),
+      where("responsavelId", "==", responsavelId)
+    );
 
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map((doc) => ({
@@ -64,7 +64,6 @@ export function useFidelidade(responsavelId: string) {
 
       setIndicacoes(data);
 
-      // Pegar nome do responsável da primeira indicação
       if (data.length > 0 && !responsavel) {
         setResponsavel({ id: responsavelId, nome: data[0].nomeResponsavel });
       }
@@ -98,9 +97,6 @@ export function useFidelidade(responsavelId: string) {
 
   const matriculados = indicacoes.filter((i) => i.status === "Matriculado").length;
   const nivel = calcularNivel(matriculados);
-  const saldo = matriculados >= 4 ? (matriculados - 4 + 1) * 50 : 0;
-  // Créditos acumulam a partir da 4ª matrícula (Ambassador)
-  // Cada matrícula além da 4ª gera R$50
   const matriculadosAmbassador = matriculados > 4 ? matriculados - 4 : 0;
   const saldoAcumulado = matriculadosAmbassador * 50;
 
