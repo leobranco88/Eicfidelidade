@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   Users, CheckCircle2, Gift, Trophy, Award,
-  UserPlus, Download, HelpCircle, Crown, Star, X, Loader2
+  UserPlus, Download, HelpCircle, Crown, Star, X, Loader2, Rocket
 } from "lucide-react";
 import { useFidelidade, type Nivel } from "../../hooks/useFidelidade";
 
@@ -10,6 +10,11 @@ const EIC_LOGO = "https://raw.githubusercontent.com/leobranco88/Studentprogressr
 
 function getBadgeStyle(nivel: Nivel) {
   switch (nivel) {
+    case "iniciante": return {
+      gradient: "linear-gradient(135deg, #E8E8E8 0%, #C8C8C8 50%, #A0A0A0 100%)",
+      shadow: "0 8px 24px rgba(160,160,160,0.35)",
+      pillBg: "#F5F0E8", pillText: "#8B7355"
+    };
     case "bronze": return {
       gradient: "linear-gradient(135deg, #E8A87C 0%, #CD7F32 50%, #A0522D 100%)",
       shadow: "0 8px 24px rgba(205,127,50,0.45)",
@@ -33,13 +38,20 @@ function getBadgeStyle(nivel: Nivel) {
   }
 }
 
-function getNivelConfig(nivel: Nivel, matriculados: number) {
+function getNivelConfig(nivel: Nivel) {
   const configs = {
+    iniciante: {
+      icon: Rocket, name: "Iniciante",
+      phrase: "Bem-vindo ao programa!",
+      subPhrase: "Indique um amigo para começar sua jornada.",
+      remainingMessage: "Falta 1 matrícula para o nível Bronze",
+      showCertificate: false, showBalance: false,
+    },
     bronze: {
       icon: Star, name: "Bronze",
       phrase: "Você deu o primeiro passo!",
       subPhrase: "Continue indicando para subir de nível.",
-      remainingMessage: `Falta ${2 - matriculados} matrícula para o nível Prata`,
+      remainingMessage: "Falta 1 matrícula para o nível Prata",
       showCertificate: false, showBalance: false,
     },
     prata: {
@@ -131,7 +143,7 @@ function ModalIndicacao({ onClose, onSubmit, enviando }: ModalIndicacaoProps) {
               </div>
             </div>
             <button onClick={handleSubmit} disabled={enviando || !nome.trim() || !whatsapp.trim()}
-              className="w-full py-4 rounded-2xl text-white font-semibold flex items-center justify-center gap-2 transition-opacity disabled:opacity-50"
+              className="w-full py-4 rounded-2xl text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
               style={{ backgroundColor: "#FF5C00" }}>
               {enviando ? <Loader2 size={20} className="animate-spin" /> : <><UserPlus size={20} />Enviar Indicação</>}
             </button>
@@ -179,7 +191,7 @@ export function FidelityPage() {
   }
 
   const nomeResponsavel = responsavel?.nome ?? "";
-  const config = getNivelConfig(nivel, matriculados);
+  const config = getNivelConfig(nivel);
   const badgeStyle = getBadgeStyle(nivel);
   const LevelIcon = config.icon;
   const progress = Math.min((matriculados / 4) * 100, 100);
@@ -213,9 +225,11 @@ export function FidelityPage() {
               <LevelIcon size={nivel === "ambassador" ? 56 : 48} className="relative z-10" style={{ color: "#FFFFFF" }} />
             </div>
           </div>
+
           <div className="inline-block px-4 py-1 rounded-full text-xs font-semibold mb-3" style={{ backgroundColor: badgeStyle.pillBg, color: badgeStyle.pillText }}>
             {config.name.toUpperCase()}
           </div>
+
           <h3 className="text-2xl mb-2" style={{ fontFamily: "Playfair Display, serif", fontWeight: 700, color: "#070738" }}>{config.phrase}</h3>
           <p className="text-sm text-gray-600 mb-1">{config.subPhrase}</p>
           {"extraPhrase" in config && config.extraPhrase && <p className="text-xs text-gray-500">{config.extraPhrase}</p>}
@@ -232,17 +246,23 @@ export function FidelityPage() {
 
         {/* MÉTRICAS */}
         <div className="grid grid-cols-3 gap-3 mb-4">
-          {[
-            { icon: <Users size={24} style={{ color: "#FF5C00" }} />, value: indicacoes.length, label: "Indicações" },
-            { icon: <CheckCircle2 size={24} style={{ color: "#22c55e" }} />, value: matriculados, label: "Matriculados" },
-            { icon: <Gift size={24} style={{ color: "#F5A800" }} />, value: nivel === "ambassador" ? `R$ ${saldoAcumulado}` : nivel === "ouro" ? "1 mês grátis" : "Badge", label: "Benefício" },
-          ].map((item, i) => (
-            <div key={i} className="bg-white rounded-2xl p-4 text-center" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-              <div className="flex justify-center mb-2">{item.icon}</div>
-              <div className="text-2xl mb-1 leading-tight" style={{ color: "#070738", fontWeight: 600, fontSize: typeof item.value === "string" ? "13px" : undefined }}>{item.value}</div>
-              <div className="text-xs text-gray-600">{item.label}</div>
+          <div className="bg-white rounded-2xl p-4 text-center" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
+            <Users size={24} className="mx-auto mb-2" style={{ color: "#FF5C00" }} />
+            <div className="text-2xl mb-1" style={{ color: "#070738", fontWeight: 600 }}>{indicacoes.length}</div>
+            <div className="text-xs text-gray-600">Indicações</div>
+          </div>
+          <div className="bg-white rounded-2xl p-4 text-center" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
+            <CheckCircle2 size={24} className="mx-auto mb-2" style={{ color: "#22c55e" }} />
+            <div className="text-2xl mb-1" style={{ color: "#070738", fontWeight: 600 }}>{matriculados}</div>
+            <div className="text-xs text-gray-600">Matriculados</div>
+          </div>
+          <div className="bg-white rounded-2xl p-4 text-center" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
+            <Gift size={24} className="mx-auto mb-2" style={{ color: "#F5A800" }} />
+            <div className="text-xs mb-1 leading-tight" style={{ color: "#070738", fontWeight: 600 }}>
+              {nivel === "ambassador" ? `R$ ${saldoAcumulado}` : nivel === "ouro" ? "1 mês grátis" : "Badge"}
             </div>
-          ))}
+            <div className="text-xs text-gray-600">Benefício</div>
+          </div>
         </div>
 
         {/* BARRA DE PROGRESSO */}
@@ -287,7 +307,7 @@ export function FidelityPage() {
           </div>
         )}
 
-        {/* LISTA */}
+        {/* LISTA DE INDICAÇÕES */}
         <div className="mb-4">
           <h3 className="text-2xl mb-4" style={{ fontFamily: "Playfair Display, serif", fontWeight: 600, color: "#070738" }}>Suas Indicações</h3>
           <div className="space-y-3">
