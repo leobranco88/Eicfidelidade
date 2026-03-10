@@ -41,6 +41,13 @@ export function calcularNivel(matriculados: number): Nivel {
   return "iniciante";
 }
 
+export function getSaldoPorNivel(nivel: Nivel, matriculados: number): number {
+  if (nivel === "bronze") return 50;
+  if (nivel === "prata") return 100;
+  if (nivel === "ambassador") return (matriculados - 3) * 50; // a partir da 4ª matrícula
+  return 0;
+}
+
 export function useFidelidade(responsavelId: string) {
   const [indicacoes, setIndicacoes] = useState<Indicacao[]>([]);
   const [responsavel, setResponsavel] = useState<Responsavel | null>(null);
@@ -91,17 +98,23 @@ export function useFidelidade(responsavelId: string) {
     }
   };
 
-  const solicitarResgate = async (tipo: "material_didatico" | "saldo_parcial", valor: number) => {
+  const solicitarResgate = async (dados: {
+    tipo: "pix" | "material_didatico";
+    valor: number;
+    chavePix?: string;
+  }) => {
     if (!responsavel) return;
     setSolicitandoResgate(true);
     try {
       await addDoc(collection(db, "resgates"), {
         responsavelId,
         nomeResponsavel: responsavel.nome,
-        tipo,
-        valor,
+        tipo: dados.tipo,
+        valor: dados.valor,
+        chavePix: dados.chavePix ?? null,
         status: "pendente",
         criadoEm: serverTimestamp(),
+        pagamentoEm: null,
       });
       setResgateEnviado(true);
       setTimeout(() => setResgateEnviado(false), 5000);
@@ -112,8 +125,7 @@ export function useFidelidade(responsavelId: string) {
 
   const matriculados = indicacoes.filter((i) => i.status === "Matriculado").length;
   const nivel = calcularNivel(matriculados);
-  const matriculadosAmbassador = matriculados > 4 ? matriculados - 4 : 0;
-  const saldoAcumulado = matriculadosAmbassador * 50;
+  const saldoAcumulado = getSaldoPorNivel(nivel, matriculados);
 
   return {
     indicacoes,
