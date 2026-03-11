@@ -6,6 +6,7 @@ import {
   onSnapshot,
   addDoc,
   serverTimestamp,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
@@ -44,7 +45,7 @@ export function calcularNivel(matriculados: number): Nivel {
 export function getSaldoPorNivel(nivel: Nivel, matriculados: number): number {
   if (nivel === "bronze") return 50;
   if (nivel === "prata") return 100;
-  if (nivel === "ambassador") return (matriculados - 3) * 50; // a partir da 4ª matrícula
+  if (nivel === "ambassador") return (matriculados - 3) * 50;
   return 0;
 }
 
@@ -58,6 +59,25 @@ export function useFidelidade(responsavelId: string) {
 
   useEffect(() => {
     if (!responsavelId) return;
+
+    // Busca primeiro na coleção responsaveis (cadastro direto)
+    const buscarResponsavel = async () => {
+      const q = query(
+        collection(db, "responsaveis"),
+        where("responsavelId", "==", responsavelId)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const data = snap.docs[0].data();
+        setResponsavel({ id: snap.docs[0].id, nome: data.nome });
+        return true;
+      }
+      return false;
+    };
+
+    buscarResponsavel();
+
+    // Escuta indicações em tempo real
     const q = query(
       collection(db, "indicacoes"),
       where("responsavelId", "==", responsavelId)
@@ -69,12 +89,17 @@ export function useFidelidade(responsavelId: string) {
         criadoEm: doc.data().criadoEm?.toDate?.()?.toISOString() ?? new Date().toISOString(),
       })) as Indicacao[];
       setIndicacoes(data);
-      if (data.length > 0 && !responsavel) {
-        setResponsavel({ id: responsavelId, nome: data[0].nomeResponsavel });
+      // Fallback: se não achou em responsaveis, tenta nas indicações
+      if (data.length > 0) {
+        setResponsavel((prev) => prev ?? { id: responsavelId, nome: data[0].nomeResponsavel });
       }
       setLoading(false);
     });
-    return () => unsub();
+
+    // Timeout para marcar loading false mesmo sem indicações (responsável cadastrado mas sem indicações)
+    const timer = setTimeout(() => setLoading(false), 3000);
+
+    return () => { unsub(); clearTimeout(timer); };
   }, [responsavelId]);
 
   const adicionarIndicacao = async (dados: {
