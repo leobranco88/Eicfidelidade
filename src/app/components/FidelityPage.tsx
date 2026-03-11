@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import {
   Users, CheckCircle2, Gift, Trophy, Award,
   UserPlus, Download, Crown, Star, X, Loader2, Rocket,
-  Banknote, BookOpen, CheckCheck, HelpCircle
+  Banknote, BookOpen, CheckCheck, HelpCircle, Clock, BadgeCheck, XCircle
 } from "lucide-react";
 import { useFidelidade, type Nivel } from "../../hooks/useFidelidade";
 
@@ -39,6 +39,55 @@ function getStatusColor(status: string) {
   }
 }
 
+// ——— Banner de status do resgate ———
+function BannerResgate({ resgateAtivo, ultimoResgatesPago }: {
+  resgateAtivo: { status: string; tipo: string; valor: number; pagoEm: string | null } | null;
+  ultimoResgatesPago: { status: string; tipo: string; valor: number; pagoEm: string | null } | null;
+}) {
+  if (resgateAtivo) {
+    const isPendente = resgateAtivo.status === "pendente";
+    return (
+      <div className="rounded-2xl p-4 mb-4 flex items-center gap-3"
+        style={{ backgroundColor: isPendente ? "#FEF3C7" : "#DBEAFE", border: `1px solid ${isPendente ? "#FDE68A" : "#BFDBFE"}` }}>
+        {isPendente
+          ? <Clock size={20} style={{ color: "#92400E", flexShrink: 0 }} />
+          : <CheckCircle2 size={20} style={{ color: "#1E40AF", flexShrink: 0 }} />}
+        <div>
+          <p className="text-sm font-semibold" style={{ color: isPendente ? "#92400E" : "#1E40AF" }}>
+            {isPendente ? "Resgate em análise" : "Resgate aprovado!"}
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: isPendente ? "#92400E" : "#1E40AF", opacity: 0.8 }}>
+            {isPendente
+              ? `Solicitação de ${resgateAtivo.tipo === "pix" ? `R$ ${resgateAtivo.valor} via PIX` : "material didático"} aguardando confirmação da EIC.`
+              : `${resgateAtivo.tipo === "pix" ? `R$ ${resgateAtivo.valor} via PIX` : "Material didático"} — pagamento será realizado no dia 30.`}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (ultimoResgatesPago) {
+    return (
+      <div className="rounded-2xl p-4 mb-4 flex items-center gap-3"
+        style={{ backgroundColor: "#D1FAE5", border: "1px solid #A7F3D0" }}>
+        <BadgeCheck size={20} style={{ color: "#065F46", flexShrink: 0 }} />
+        <div>
+          <p className="text-sm font-semibold" style={{ color: "#065F46" }}>
+            {ultimoResgatesPago.tipo === "pix" ? "PIX enviado! ✓" : "Material entregue! ✓"}
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: "#065F46", opacity: 0.8 }}>
+            {ultimoResgatesPago.tipo === "pix"
+              ? `R$ ${ultimoResgatesPago.valor} enviados em ${ultimoResgatesPago.pagoEm ? new Date(ultimoResgatesPago.pagoEm).toLocaleDateString("pt-BR") : "—"}`
+              : `Entregue em ${ultimoResgatesPago.pagoEm ? new Date(ultimoResgatesPago.pagoEm).toLocaleDateString("pt-BR") : "—"}`}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 // ——— Modal Como Funciona ———
 function ModalComoFunciona({ onClose }: { onClose: () => void }) {
   const niveis = [
@@ -64,8 +113,7 @@ function ModalComoFunciona({ onClose }: { onClose: () => void }) {
           <h3 className="text-xl font-bold" style={{ fontFamily: "Playfair Display, serif", color: "#070738" }}>Como funciona?</h3>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100"><X size={20} className="text-gray-500" /></button>
         </div>
-        <p className="text-sm text-gray-500 mb-6">Indique amigos para a EIC e suba de nível a cada matrícula confirmada. Quanto mais você indica, maiores são os benefícios!</p>
-
+        <p className="text-sm text-gray-500 mb-6">Indique amigos para a EIC e suba de nível a cada matrícula confirmada.</p>
         <h4 className="text-sm font-semibold mb-3" style={{ color: "#070738" }}>Os níveis do programa</h4>
         <div className="space-y-3 mb-6">
           {niveis.map((n) => {
@@ -86,7 +134,6 @@ function ModalComoFunciona({ onClose }: { onClose: () => void }) {
             );
           })}
         </div>
-
         <h4 className="text-sm font-semibold mb-3" style={{ color: "#070738" }}>Regras importantes</h4>
         <div className="space-y-2 mb-6">
           {regras.map((regra, i) => (
@@ -98,7 +145,6 @@ function ModalComoFunciona({ onClose }: { onClose: () => void }) {
             </div>
           ))}
         </div>
-
         <button onClick={onClose} className="w-full py-4 rounded-2xl text-white font-semibold" style={{ backgroundColor: "#6B3FA0" }}>
           Entendi!
         </button>
@@ -114,13 +160,13 @@ interface ModalResgateProps {
   onClose: () => void;
   onConfirmar: (dados: { tipo: "pix" | "material_didatico"; valor: number; chavePix?: string }) => Promise<void>;
   enviando: boolean;
-  enviado: boolean;
 }
 
-function ModalResgate({ nivel, saldo, onClose, onConfirmar, enviando, enviado }: ModalResgateProps) {
+function ModalResgate({ nivel, saldo, onClose, onConfirmar, enviando }: ModalResgateProps) {
   const [tipo, setTipo] = useState<"pix" | "material_didatico">("pix");
   const [valor, setValor] = useState(nivel === "bronze" ? 50 : nivel === "prata" ? 100 : 50);
   const [chavePix, setChavePix] = useState("");
+  const [enviado, setEnviado] = useState(false);
   const isFixo = nivel === "bronze" || nivel === "prata";
   const multiplos = isFixo ? [saldo] : Array.from({ length: Math.floor(saldo / 50) }, (_, i) => (i + 1) * 50);
   const podeMaterial = nivel === "ambassador" && saldo >= 350;
@@ -128,6 +174,7 @@ function ModalResgate({ nivel, saldo, onClose, onConfirmar, enviando, enviado }:
   const handleConfirmar = async () => {
     if (tipo === "pix" && !chavePix.trim()) return;
     await onConfirmar({ tipo, valor: tipo === "material_didatico" ? 350 : valor, chavePix: tipo === "pix" ? chavePix.trim() : undefined });
+    setEnviado(true);
   };
 
   return (
@@ -145,6 +192,9 @@ function ModalResgate({ nivel, saldo, onClose, onConfirmar, enviando, enviado }:
             <p className="text-sm text-gray-500 mt-2 px-4">
               {tipo === "pix" ? "O pagamento será realizado via PIX no dia 30. A equipe EIC confirmará em breve." : "A equipe EIC entrará em contato para combinar a entrega do material didático."}
             </p>
+            <button onClick={onClose} className="mt-6 px-8 py-3 rounded-2xl text-white font-semibold" style={{ backgroundColor: "#6B3FA0" }}>
+              Fechar
+            </button>
           </div>
         ) : (
           <>
@@ -272,7 +322,11 @@ function ModalIndicacao({ onClose, onSubmit, enviando }: { onClose: () => void; 
 // ——— Página Principal ———
 export function FidelityPage() {
   const { responsavelId } = useParams<{ responsavelId: string }>();
-  const { indicacoes, responsavel, loading, enviando, nivel, matriculados, saldoAcumulado, adicionarIndicacao, solicitarResgate, solicitandoResgate, resgateEnviado } = useFidelidade(responsavelId ?? "");
+  const {
+    indicacoes, responsavel, loading, enviando, nivel, matriculados, saldoAcumulado,
+    adicionarIndicacao, solicitarResgate, solicitandoResgate,
+    resgateAtivo, ultimoResgatesPago,
+  } = useFidelidade(responsavelId ?? "");
   const [timedOut, setTimedOut] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
   const [modalResgateAberto, setModalResgateAberto] = useState(false);
@@ -316,6 +370,9 @@ export function FidelityPage() {
   const balanceProgress = Math.min((saldoAcumulado / 350) * 100, 100);
   const remainingBalance = 350 - saldoAcumulado;
 
+  // Botão de resgate fica bloqueado se já tem resgate ativo (pendente ou aprovado)
+  const resgateDesabilitado = !!resgateAtivo;
+
   return (
     <div className="max-w-[430px] mx-auto min-h-screen" style={{ fontFamily: "DM Sans, sans-serif", backgroundColor: "#F8F6FF" }}>
       <header className="px-6 py-6 text-white" style={{ background: "linear-gradient(135deg, #FF5C00 0%, #6B3FA0 50%, #070738 100%)" }}>
@@ -348,6 +405,9 @@ export function FidelityPage() {
           <p className="text-sm text-gray-600">{config.subPhrase}</p>
         </div>
 
+        {/* Banner status resgate */}
+        <BannerResgate resgateAtivo={resgateAtivo} ultimoResgatesPago={ultimoResgatesPago} />
+
         {/* Banner Ouro */}
         {nivel === "ouro" && (
           <div className="rounded-2xl p-6 text-white text-center mb-4" style={{ background: "linear-gradient(135deg, #FFE566 0%, #F5A800 50%, #D4870A 100%)", boxShadow: "0 4px 20px rgba(245,168,0,0.3)" }}>
@@ -359,14 +419,20 @@ export function FidelityPage() {
 
         {/* Banner Bronze/Prata */}
         {(nivel === "bronze" || nivel === "prata") && (
-          <div className="rounded-2xl p-5 mb-4 flex items-center justify-between" style={{ background: nivel === "bronze" ? "linear-gradient(135deg, #E8A87C, #CD7F32)" : "linear-gradient(135deg, #C8D0DC, #8892A4)", boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}>
+          <div className="rounded-2xl p-5 mb-4 flex items-center justify-between"
+            style={{ background: nivel === "bronze" ? "linear-gradient(135deg, #E8A87C, #CD7F32)" : "linear-gradient(135deg, #C8D0DC, #8892A4)", boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}>
             <div>
               <p className="text-white font-bold text-lg" style={{ fontFamily: "Playfair Display, serif" }}>R$ {saldoAcumulado} disponíveis!</p>
-              <p className="text-white text-xs opacity-90 mt-0.5">Resgate via PIX até o dia 30</p>
+              <p className="text-white text-xs opacity-90 mt-0.5">
+                {resgateDesabilitado ? "Resgate em andamento" : "Resgate via PIX até o dia 30"}
+              </p>
             </div>
-            <button onClick={() => setModalResgateAberto(true)} className="px-4 py-2 rounded-xl font-semibold text-sm"
+            <button
+              onClick={() => !resgateDesabilitado && setModalResgateAberto(true)}
+              disabled={resgateDesabilitado}
+              className="px-4 py-2 rounded-xl font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               style={{ backgroundColor: "white", color: nivel === "bronze" ? "#CD7F32" : "#374151" }}>
-              Resgatar
+              {resgateDesabilitado ? "Aguardando" : "Resgatar"}
             </button>
           </div>
         )}
@@ -434,8 +500,13 @@ export function FidelityPage() {
               <p className="text-sm text-gray-600 mb-4">Faltam <span style={{ color: "#FF5C00", fontWeight: 600 }}>R$ {remainingBalance}</span> para o material didático</p>
             )}
             {saldoAcumulado >= 50 && (
-              <button onClick={() => setModalResgateAberto(true)} className="w-full py-3 rounded-xl text-white font-semibold flex items-center justify-center gap-2" style={{ backgroundColor: "#FF5C00" }}>
-                <Banknote size={18} /> Resgatar saldo
+              <button
+                onClick={() => !resgateDesabilitado && setModalResgateAberto(true)}
+                disabled={resgateDesabilitado}
+                className="w-full py-3 rounded-xl text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: "#FF5C00" }}>
+                <Banknote size={18} />
+                {resgateDesabilitado ? "Resgate em andamento" : "Resgatar saldo"}
               </button>
             )}
           </div>
@@ -492,9 +563,13 @@ export function FidelityPage() {
 
       {modalAberto && <ModalIndicacao onClose={() => setModalAberto(false)} onSubmit={adicionarIndicacao} enviando={enviando} />}
       {modalResgateAberto && (
-        <ModalResgate nivel={nivel} saldo={saldoAcumulado} onClose={() => setModalResgateAberto(false)}
+        <ModalResgate
+          nivel={nivel}
+          saldo={saldoAcumulado}
+          onClose={() => setModalResgateAberto(false)}
           onConfirmar={async (dados) => { await solicitarResgate(dados); }}
-          enviando={solicitandoResgate} enviado={resgateEnviado} />
+          enviando={solicitandoResgate}
+        />
       )}
       {modalComoFuncionaAberto && <ModalComoFunciona onClose={() => setModalComoFuncionaAberto(false)} />}
 
