@@ -16,6 +16,8 @@ export type StatusIndicacao =
   | "Em avaliação"
   | "Matriculado";
 
+export type StatusResgate = "pendente" | "aprovado" | "pago" | "recusado";
+
 export interface Indicacao {
   id: string;
   nomeIndicado: string;
@@ -30,6 +32,15 @@ export interface Indicacao {
 export interface Responsavel {
   id: string;
   nome: string;
+}
+
+export interface Resgate {
+  id: string;
+  tipo: "pix" | "material_didatico";
+  valor: number;
+  status: StatusResgate;
+  criadoEm: string;
+  pagoEm: string | null;
 }
 
 export type Nivel = "iniciante" | "bronze" | "prata" | "ouro" | "ambassador";
@@ -51,16 +62,16 @@ export function getSaldoPorNivel(nivel: Nivel, matriculados: number): number {
 
 export function useFidelidade(responsavelId: string) {
   const [indicacoes, setIndicacoes] = useState<Indicacao[]>([]);
+  const [resgates, setResgates] = useState<Resgate[]>([]);
   const [responsavel, setResponsavel] = useState<Responsavel | null>(null);
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [solicitandoResgate, setSolicitandoResgate] = useState(false);
-  const [resgateEnviado, setResgateEnviado] = useState(false);
 
   useEffect(() => {
     if (!responsavelId) return;
 
-    // Busca primeiro na coleção responsaveis (cadastro direto)
+    // Busca responsável na coleção responsaveis
     const buscarResponsavel = async () => {
       const q = query(
         collection(db, "responsaveis"),
@@ -70,36 +81,46 @@ export function useFidelidade(responsavelId: string) {
       if (!snap.empty) {
         const data = snap.docs[0].data();
         setResponsavel({ id: snap.docs[0].id, nome: data.nome });
-        return true;
       }
-      return false;
     };
-
     buscarResponsavel();
 
     // Escuta indicações em tempo real
-    const q = query(
+    const qInd = query(
       collection(db, "indicacoes"),
       where("responsavelId", "==", responsavelId)
     );
-    const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        criadoEm: doc.data().criadoEm?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+    const unsubInd = onSnapshot(qInd, (snap) => {
+      const data = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+        criadoEm: d.data().criadoEm?.toDate?.()?.toISOString() ?? new Date().toISOString(),
       })) as Indicacao[];
       setIndicacoes(data);
-      // Fallback: se não achou em responsaveis, tenta nas indicações
       if (data.length > 0) {
         setResponsavel((prev) => prev ?? { id: responsavelId, nome: data[0].nomeResponsavel });
       }
       setLoading(false);
     });
 
-    // Timeout para marcar loading false mesmo sem indicações (responsável cadastrado mas sem indicações)
+    // Escuta resgates em tempo real
+    const qRes = query(
+      collection(db, "resgates"),
+      where("responsavelId", "==", responsavelId)
+    );
+    const unsubRes = onSnapshot(qRes, (snap) => {
+      const data = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+        criadoEm: d.data().criadoEm?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+        pagoEm: d.data().pagoEm?.toDate?.()?.toISOString() ?? null,
+      })) as Resgate[];
+      setResgates(data);
+    });
+
     const timer = setTimeout(() => setLoading(false), 3000);
 
-    return () => { unsub(); clearTimeout(timer); };
+    return () => { unsubInd(); unsubRes(); clearTimeout(timer); };
   }, [responsavelId]);
 
   const adicionarIndicacao = async (dados: {
@@ -140,9 +161,8 @@ export function useFidelidade(responsavelId: string) {
         status: "pendente",
         criadoEm: serverTimestamp(),
         pagamentoEm: null,
+        pagoEm: null,
       });
-      setResgateEnviado(true);
-      setTimeout(() => setResgateEnviado(false), 5000);
     } finally {
       setSolicitandoResgate(false);
     }
@@ -152,8 +172,15 @@ export function useFidelidade(responsavelId: string) {
   const nivel = calcularNivel(matriculados);
   const saldoAcumulado = getSaldoPorNivel(nivel, matriculados);
 
+  // Resgate ativo = pendente ou aprovado (ainda não pago)
+  const resgateAtivo = resgates.find((r) => r.status === "pendente" || r.status === "aprovado") ?? null;
+  const ultimoResgatesPago = resgates.find((r) => r.status === "pago") ?? null;
+
   return {
     indicacoes,
+    resgates,
+    resgateAtivo,
+    ultimoResgatesPago,
     responsavel,
     loading,
     enviando,
@@ -164,6 +191,5 @@ export function useFidelidade(responsavelId: string) {
     setResponsavel,
     solicitarResgate,
     solicitandoResgate,
-    resgateEnviado,
   };
 }
